@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Advisor - ASCA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage-green: #7C9885;
+            --warm-orange: #E8A87C;
+            --soft-blue: #A8DADC;
+            --cream-white: #F1FAEE;
+            --charcoal-gray: #457B9D;
+            --light-gray: #E9ECEF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--cream-white) 0%, #E8F4F8 100%);
+            min-height: 100vh;
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        
+        .requirement-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--light-gray);
+        }
+        
+        .requirement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .requirement-card.completed {
+            border-left-color: #10B981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+        }
+        
+        .requirement-card.in-progress {
+            border-left-color: #F59E0B;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(245, 158, 11, 0.02));
+        }
+        
+        .requirement-card.pending {
+            border-left-color: #EF4444;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
+        }
+        
+        .uc-campus-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .uc-campus-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .uc-campus-card.selected {
+            border: 2px solid var(--sage-green);
+            background: linear-gradient(135deg, rgba(124, 152, 133, 0.05), rgba(168, 218, 220, 0.05));
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 24px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--light-gray);
+        }
+        
+        .timeline-item.completed::before {
+            background: #10B981;
+        }
+        
+        .timeline-item.current::before {
+            background: var(--warm-orange);
+            animation: pulse 2s infinite;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 21px;
+            top: 20px;
+            width: 2px;
+            height: calc(100% + 4px);
+            background: var(--light-gray);
+        }
+        
+        .timeline-item:last-child::after {
+            display: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .course-planner {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .semester-column {
+            min-height: 300px;
+            border: 2px dashed #E5E7EB;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .semester-column.drag-over {
+            border-color: var(--sage-green);
+            background: rgba(124, 152, 133, 0.05);
+        }
+        
+        .course-card {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+        
+        .course-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .course-card.dragging {
+            opacity: 0.8;
+            transform: rotate(5deg);
+            cursor: grabbing;
+        }
+        
+        .course-card.completed {
+            background: rgba(16, 185, 129, 0.05);
+            border-color: #10B981;
+        }
+        
+        .course-card.in-progress {
+            background: rgba(59, 130, 246, 0.05);
+            border-color: #3B82F6;
+        }
+        
+        .course-card.planned {
+            background: rgba(245, 158, 11, 0.05);
+            border-color: #F59E0B;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--sage-green);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--sage-green);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .floating-plan-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--sage-green), var(--warm-orange));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+        
+        .floating-plan-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .acceptance-prediction {
+            background: linear-gradient(135deg, rgba(124, 152, 133, 0.1), rgba(168, 218, 220, 0.1));
+            border: 1px solid rgba(124, 152, 133, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .prediction-meter {
+            width: 100%;
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        
+        .prediction-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #EF4444, #F59E0B, #10B981);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .resource-link {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .resource-link:hover {
+            border-color: var(--sage-green);
+            background: rgba(124, 152, 133, 0.05);
+            transform: translateX(4px);
+        }
+        
+        .deadline-alert {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            animation: pulse-warning 2s infinite;
+        }
+        
+        @keyframes pulse-warning {
+            0%, 100% { background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1)); }
+            50% { background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15)); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">AI</span>
+                        </div>
+                        <span class="text-xl font-bold text-charcoal-gray">ASCA</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="nav-link text-gray-600">Dashboard</a>
+                        <a href="assignments.html" class="nav-link text-gray-600">Assignments</a>
+                        <a href="research.html" class="nav-link text-gray-600">Research</a>
+                        <a href="study-groups.html" class="nav-link text-gray-600">Study Groups</a>
+                        <a href="transfer.html" class="nav-link text-charcoal-gray font-medium">Transfer</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-charcoal-gray">
+                        🎓 Transfer Readiness: <span id="readiness-score">87%</span>
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-warm-orange to-sage-green rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="bg-gradient-to-r from-orange-50 to-amber-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-charcoal-gray mb-4">Transfer Advisor</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Navigate your UC transfer journey with confidence. Track requirements, plan courses, 
+                    and receive personalized guidance for a successful transfer.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: UC Campus Selection & Requirements -->
+            <div class="space-y-6">
+                
+                <!-- UC Campus Selection -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray mb-4">🎓 Select UC Campus</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="uc-campus-card selected p-4" data-campus="uc-berkeley" onclick="selectCampus('uc-berkeley')">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">🐻</div>
+                                <h3 class="font-semibold text-sm">UC Berkeley</h3>
+                                <p class="text-xs text-gray-600">Computer Science</p>
+                            </div>
+                        </div>
+                        
+                        <div class="uc-campus-card p-4" data-campus="uc-davis" onclick="selectCampus('uc-davis')">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">🐴</div>
+                                <h3 class="font-semibold text-sm">UC Davis</h3>
+                                <p class="text-xs text-gray-600">Biology</p>
+                            </div>
+                        </div>
+                        
+                        <div class="uc-campus-card p-4" data-campus="uc-san-diego" onclick="selectCampus('uc-san-diego')">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">🌊</div>
+                                <h3 class="font-semibold text-sm">UC San Diego</h3>
+                                <p class="text-xs text-gray-600">Engineering</p>
+                            </div>
+                        </div>
+                        
+                        <div class="uc-campus-card p-4" data-campus="uc-irvine" onclick="selectCampus('uc-irvine')">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">🦘</div>
+                                <h3 class="font-semibold text-sm">UC Irvine</h3>
+                                <p class="text-xs text-gray-600">Business</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transfer Requirements -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📋 Transfer Requirements</h3>
+                    <div class="space-y-3" id="requirements-list">
+                        <div class="requirement-card completed p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Minimum GPA</h4>
+                                    <p class="text-xs text-gray-600">3.0+ required</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-bold text-green-600">3.6</span>
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                        <span class="text-green-600 text-xs">✓</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="requirement-card completed p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">English Composition</h4>
+                                    <p class="text-xs text-gray-600">2 courses required</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-bold text-green-600">2/2</span>
+                                    <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                        <span class="text-green-600 text-xs">✓</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="requirement-card in-progress p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Mathematics</h4>
+                                    <p class="text-xs text-gray-600">Calculus I & II</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-bold text-yellow-600">1/2</span>
+                                    <div class="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <span class="text-yellow-600 text-xs">⏳</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="requirement-card pending p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Major Prerequisites</h4>
+                                    <p class="text-xs text-gray-600">CS courses</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-bold text-red-600">3/6</span>
+                                    <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                                        <span class="text-red-600 text-xs">❌</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="requirement-card pending p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">IGETC Certification</h4>
+                                    <p class="text-xs text-gray-600">General education</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-bold text-red-600">5/7</span>
+                                    <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                                        <span class="text-red-600 text-xs">❌</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-charcoal-gray">18/24</div>
+                            <div class="text-sm text-gray-600">Requirements Completed</div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                <div class="bg-sage-green h-2 rounded-full" style="width: 75%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deadlines Alert -->
+                <div class="deadline-alert">
+                    <div class="flex items-start space-x-3">
+                        <div class="text-red-500 text-lg">⚠️</div>
+                        <div>
+                            <h4 class="font-medium text-sm text-red-800">Upcoming Deadline</h4>
+                            <p class="text-xs text-red-700 mt-1">UC Application deadline is in 45 days. Complete your remaining requirements!</p>
+                            <button onclick="viewApplicationTimeline()" class="text-xs text-red-600 hover:text-red-700 mt-2 font-medium">
+                                View Timeline →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center Column: Course Planner -->
+            <div class="course-planner p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray">📚 Course Planner</h2>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="savePlan()" class="text-sm bg-sage-green text-white px-3 py-1 rounded-lg hover:bg-opacity-90 transition-colors">
+                            Save Plan
+                        </button>
+                        <button onclick="exportPlan()" class="text-sm bg-gray-200 text-charcoal-gray px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
+                            Export
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Available Courses -->
+                    <div>
+                        <h3 class="font-semibold text-charcoal-gray mb-3">Available Courses</h3>
+                        <div class="space-y-2" id="available-courses">
+                            <div class="course-card completed" draggable="true" data-course="calc-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Calculus I</h4>
+                                        <p class="text-xs text-gray-600">MATH 150 • 4 units</p>
+                                    </div>
+                                    <div class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Complete</div>
+                                </div>
+                            </div>
+                            
+                            <div class="course-card completed" draggable="true" data-course="eng-1a">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">English Composition</h4>
+                                        <p class="text-xs text-gray-600">ENGL 100 • 3 units</p>
+                                    </div>
+                                    <div class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Complete</div>
+                                </div>
+                            </div>
+                            
+                            <div class="course-card in-progress" draggable="true" data-course="calc-2">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Calculus II</h4>
+                                        <p class="text-xs text-gray-600">MATH 151 • 4 units</p>
+                                    </div>
+                                    <div class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">In Progress</div>
+                                </div>
+                            </div>
+                            
+                            <div class="course-card planned" draggable="true" data-course="cs-101">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Introduction to Programming</h4>
+                                        <p class="text-xs text-gray-600">CS 101 • 3 units</p>
+                                    </div>
+                                    <div class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded">Planned</div>
+                                </div>
+                            </div>
+                            
+                            <div class="course-card planned" draggable="true" data-course="cs-102">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Data Structures</h4>
+                                        <p class="text-xs text-gray-600">CS 102 • 3 units</p>
+                                    </div>
+                                    <div class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded">Planned</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Semester Plan -->
+                    <div>
+                        <h3 class="font-semibold text-charcoal-gray mb-3">Spring 2025</h3>
+                        <div class="semester-column" id="spring-2025">
+                            <div class="course-card in-progress" data-course="calc-2">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Calculus II</h4>
+                                        <p class="text-xs text-gray-600">MATH 151 • 4 units</p>
+                                    </div>
+                                    <button onclick="removeCourse('calc-2')" class="text-red-500 hover:text-red-700 text-xs">×</button>
+                                </div>
+                            </div>
+                            
+                            <div class="course-card planned" data-course="cs-101">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-medium text-sm">Introduction to Programming</h4>
+                                        <p class="text-xs text-gray-600">CS 101 • 3 units</p>
+                                    </div>
+                                    <button onclick="removeCourse('cs-101')" class="text-red-500 hover:text-red-700 text-xs">×</button>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center text-gray-400 text-sm mt-4">
+                                Drag courses here to plan your semester
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="flex justify-between text-sm">
+                                <span>Total Units:</span>
+                                <span class="font-semibold">7 units</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Analytics & Resources -->
+            <div class="space-y-6">
+                
+                <!-- Acceptance Prediction -->
+                <div class="acceptance-prediction">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-3">🎯 Acceptance Prediction</h3>
+                    <div class="text-center">
+                        <div class="text-4xl font-bold text-sage-green mb-2">87%</div>
+                        <div class="text-sm text-gray-600 mb-3">Chance of Acceptance</div>
+                        <div class="prediction-meter">
+                            <div class="prediction-fill" style="width: 87%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-2">Based on your current academic profile</div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">GPA Strength</span>
+                            <span class="font-semibold text-green-600">Strong</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Course Completion</span>
+                            <span class="font-semibold text-yellow-600">Good</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Extracurriculars</span>
+                            <span class="font-semibold text-green-600">Strong</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Application Timeline -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📅 Application Timeline</h3>
+                    <div class="space-y-4">
+                        <div class="timeline-item completed">
+                            <h4 class="font-medium text-sm">Research UC Campuses</h4>
+                            <p class="text-xs text-gray-600">Completed • 3 months ago</p>
+                        </div>
+                        
+                        <div class="timeline-item completed">
+                            <h4 class="font-medium text-sm">Meet with Counselor</h4>
+                            <p class="text-xs text-gray-600">Completed • 2 months ago</p>
+                        </div>
+                        
+                        <div class="timeline-item current">
+                            <h4 class="font-medium text-sm">Complete Prerequisites</h4>
+                            <p class="text-xs text-gray-600">In Progress • Due in 30 days</p>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <h4 class="font-medium text-sm">Submit Application</h4>
+                            <p class="text-xs text-gray-600">Pending • Due in 45 days</p>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <h4 class="font-medium text-sm">Transfer Decision</h4>
+                            <p class="text-xs text-gray-600">Pending • Expected in 120 days</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transfer Resources -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📖 Transfer Resources</h3>
+                    <div class="space-y-3">
+                        <div class="resource-link" onclick="openResource('assist')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-blue-500 text-lg">🔗</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">ASSIST.org</h4>
+                                    <p class="text-xs text-gray-600">Course transferability database</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-link" onclick="openResource('uc-website')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-green-500 text-lg">🌐</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">UC Admissions</h4>
+                                    <p class="text-xs text-gray-600">Official UC transfer information</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-link" onclick="openResource('counseling')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-purple-500 text-lg">👨‍🏫</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Transfer Counseling</h4>
+                                    <p class="text-xs text-gray-600">Schedule an appointment</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-link" onclick="openResource('financial-aid')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-orange-500 text-lg">💰</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Financial Aid</h4>
+                                    <p class="text-xs text-gray-600">Scholarships and grants</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Analytics -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📊 Progress Analytics</h3>
+                    <div id="progress-chart" style="height: 200px;"></div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Transfer GPA</span>
+                            <span class="font-semibold text-green-600">3.6/4.0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Units Completed</span>
+                            <span class="font-semibold text-blue-600">72/90</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Major Prep Progress</span>
+                            <span class="font-semibold text-yellow-600">50%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">IGETC Progress</span>
+                            <span class="font-semibold text-orange-600">71%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Plan Button -->
+    <div class="floating-plan-btn" onclick="optimizePlan()">
+        🎓
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal-gray text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">AI</span>
+                    </div>
+                    <span class="text-2xl font-bold">EduAgents</span>
+                </div>
+                <p class="text-white/80 mb-6">Empowering academic success through collaborative AI intelligence</p>
+                <div class="flex justify-center space-x-6 text-sm text-white/60">
+                    <span>© 2025 Adaptive Student Coaching Agents</span>
+                    <span>•</span>
+                    <span>Built with Multi-Agent Collaboration</span>
+                    <span>•</span>
+                    <span>Powered by Gemini LLM</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Transfer advisor functionality
+        let selectedCampus = 'uc-berkeley';
+        let transferProgress = {
+            gpa: 3.6,
+            unitsCompleted: 72,
+            unitsRequired: 90,
+            majorPrepCompleted: 3,
+            majorPrepRequired: 6,
+            igetcCompleted: 5,
+            igetcRequired: 7
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDragAndDrop();
+            initializeProgressChart();
+            updateAcceptancePrediction();
+            animateElements();
+        });
+
+        // Initialize drag and drop for course planner
+        function initializeDragAndDrop() {
+            const courseCards = document.querySelectorAll('.course-card[draggable="true"]');
+            const semesterColumn = document.getElementById('spring-2025');
+            
+            courseCards.forEach(card => {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+            
+            semesterColumn.addEventListener('dragover', handleDragOver);
+            semesterColumn.addEventListener('drop', handleDrop);
+            semesterColumn.addEventListener('dragenter', handleDragEnter);
+            semesterColumn.addEventListener('dragleave', handleDragLeave);
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.dataset.course);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.target.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.target.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.target.classList.remove('drag-over');
+            
+            const courseId = e.dataTransfer.getData('text/plain');
+            const courseCard = document.querySelector(`[data-course="${courseId}"]`);
+            
+            if (courseCard && !e.target.querySelector(`[data-course="${courseId}"]`)) {
+                const clonedCard = courseCard.cloneNode(true);
+                const removeBtn = clonedCard.querySelector('button');
+                removeBtn.onclick = () => removeCourse(courseId);
+                
+                e.target.appendChild(clonedCard);
+                
+                // Remove the empty state text if it exists
+                const emptyText = e.target.querySelector('.text-gray-400');
+                if (emptyText) emptyText.remove();
+                
+                updateSemesterUnits();
+                showNotification(`✅ ${clonedCard.querySelector('h4').textContent} added to semester plan!`, 'success');
+            }
+        }
+
+        // Remove course from semester
+        function removeCourse(courseId) {
+            const courseCard = document.querySelector(`#spring-2025 [data-course="${courseId}"]`);
+            if (courseCard) {
+                const courseName = courseCard.querySelector('h4').textContent;
+                courseCard.remove();
+                updateSemesterUnits();
+                showNotification(`❌ ${courseName} removed from semester plan`, 'info');
+            }
+        }
+
+        // Update semester units
+        function updateSemesterUnits() {
+            const semesterColumn = document.getElementById('spring-2025');
+            const courseCards = semesterColumn.querySelectorAll('.course-card');
+            let totalUnits = 0;
+            
+            courseCards.forEach(card => {
+                const unitsText = card.querySelector('.text-xs').textContent;
+                const units = parseInt(unitsText.match(/(\d+) units/)[1]);
+                totalUnits += units;
+            });
+            
+            const unitsDisplay = semesterColumn.parentElement.querySelector('.font-semibold');
+            if (unitsDisplay) {
+                unitsDisplay.textContent = `${totalUnits} units`;
+            }
+        }
+
+        // Campus selection
+        function selectCampus(campusId) {
+            // Remove previous selection
+            document.querySelectorAll('.uc-campus-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selection to clicked campus
+            document.querySelector(`[data-campus="${campusId}"]`).classList.add('selected');
+            selectedCampus = campusId;
+            
+            showNotification(`🏫 Selected ${campusId.replace('-', ' ').toUpperCase()}`, 'info');
+            updateRequirements();
+        }
+
+        // Update requirements based on selected campus
+        function updateRequirements() {
+            // Simulate different requirements for different campuses
+            const requirements = {
+                'uc-berkeley': [
+                    { name: 'Minimum GPA', required: '3.0+', completed: '3.6', status: 'completed' },
+                    { name: 'English Composition', required: '2 courses', completed: '2/2', status: 'completed' },
+                    { name: 'Mathematics', required: 'Calc I & II', completed: '1/2', status: 'in-progress' },
+                    { name: 'Major Prerequisites', required: 'CS courses', completed: '3/6', status: 'pending' },
+                    { name: 'IGETC Certification', required: 'Gen ed', completed: '5/7', status: 'pending' }
+                ],
+                'uc-davis': [
+                    { name: 'Minimum GPA', required: '3.0+', completed: '3.6', status: 'completed' },
+                    { name: 'Biology Sequence', required: '3 courses', completed: '2/3', status: 'in-progress' },
+                    { name: 'Chemistry', required: 'Gen & Organic', completed: '1/2', status: 'pending' },
+                    { name: 'Physics', required: 'Calc-based', completed: '0/2', status: 'pending' }
+                ]
+                // Add more campuses as needed
+            };
+            
+            const campusRequirements = requirements[selectedCampus] || requirements['uc-berkeley'];
+            updateRequirementsList(campusRequirements);
+        }
+
+        function updateRequirementsList(requirements) {
+            const container = document.getElementById('requirements-list');
+            container.innerHTML = '';
+            
+            requirements.forEach((req, index) => {
+                const card = document.createElement('div');
+                card.className = `requirement-card ${req.status} p-4`;
+                
+                const statusIcons = {
+                    completed: { icon: '✓', color: 'green' },
+                    'in-progress': { icon: '⏳', color: 'yellow' },
+                    pending: { icon: '❌', color: 'red' }
+                };
+                
+                const statusInfo = statusIcons[req.status];
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-sm">${req.name}</h4>
+                            <p class="text-xs text-gray-600">${req.required}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-bold text-${statusInfo.color}-600">${req.completed}</span>
+                            <div class="w-6 h-6 bg-${statusInfo.color}-100 rounded-full flex items-center justify-center">
+                                <span class="text-${statusInfo.color}-600 text-xs">${statusInfo.icon}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+                
+                // Animate card appearance
+                anime({
+                    targets: card,
+                    translateX: [-300, 0],
+                    opacity: [0, 1],
+                    duration: 500,
+                    delay: index * 100,
+                    easing: 'easeOutQuart'
+                });
+            });
+        }
+
+        // Initialize progress chart
+        function initializeProgressChart() {
+            const chartDom = document.getElementById('progress-chart');
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Semester 1', 'Semester 2', 'Semester 3', 'Current'],
+                    axisLine: { show: false },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    splitLine: { 
+                        lineStyle: { color: '#E5E7EB' }
+                    }
+                },
+                series: [{
+                    name: 'Transfer Progress',
+                    data: [25, 45, 65, 75],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#7C9885',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#7C9885'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(124, 152, 133, 0.3)'
+                            }, {
+                                offset: 1, color: 'rgba(124, 152, 133, 0.05)'
+                            }]
+                        }
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                }
+            };
+            
+            myChart.setOption(option);
+        }
+
+        // Update acceptance prediction
+        function updateAcceptancePrediction() {
+            const gpaScore = Math.min(100, (transferProgress.gpa / 4.0) * 100);
+            const unitsScore = Math.min(100, (transferProgress.unitsCompleted / transferProgress.unitsRequired) * 100);
+            const majorScore = Math.min(100, (transferProgress.majorPrepCompleted / transferProgress.majorPrepRequired) * 100);
+            const igetcScore = Math.min(100, (transferProgress.igetcCompleted / transferProgress.igetcRequired) * 100);
+            
+            const overallScore = (gpaScore * 0.3 + unitsScore * 0.2 + majorScore * 0.3 + igetcScore * 0.2);
+            const acceptanceChance = Math.min(95, Math.max(10, overallScore + Math.random() * 10 - 5));
+            
+            document.getElementById('readiness-score').textContent = Math.round(acceptanceChance) + '%';
+            
+            // Update prediction meter
+            const meter = document.querySelector('.prediction-fill');
+            meter.style.width = acceptanceChance + '%';
+        }
+
+        // Action functions
+        function savePlan() {
+            showNotification('💾 Course plan saved successfully!', 'success');
+        }
+
+        function exportPlan() {
+            showNotification('📄 Course plan exported as PDF!', 'success');
+        }
+
+        function optimizePlan() {
+            showNotification('🤖 AI is optimizing your transfer plan...', 'info');
+            
+            setTimeout(() => {
+                // Add recommended courses
+                const recommendations = [
+                    'Linear Algebra (MATH 270)',
+                    'Discrete Mathematics (MATH 225)',
+                    'Computer Organization (CS 201)'
+                ];
+                
+                showNotification('✅ Plan optimized! Check recommended courses.', 'success');
+                
+                // Show recommendations modal
+                const modal = createModal('AI Recommendations', `
+                    <div class="space-y-3">
+                        <h4 class="font-semibold text-charcoal-gray">Recommended Courses for Better Transfer Chances:</h4>
+                        ${recommendations.map(course => `
+                            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="font-medium text-sm text-blue-800">${course}</div>
+                                <div class="text-xs text-blue-600 mt-1">Improves major preparation score</div>
+                            </div>
+                        `).join('')}
+                        <button onclick="closeModal()" class="w-full bg-sage-green text-white py-2 rounded-lg hover:bg-opacity-90 transition-colors mt-4">
+                            Got it!
+                        </button>
+                    </div>
+                `);
+                document.body.appendChild(modal);
+            }, 2000);
+        }
+
+        function viewApplicationTimeline() {
+            const modal = createModal('Application Timeline Details', `
+                <div class="space-y-4">
+                    <h4 class="font-semibold text-charcoal-gray">Critical Deadlines Approaching:</h4>
+                    
+                    <div class="deadline-alert">
+                        <div class="flex items-start space-x-3">
+                            <div class="text-red-500 text-lg">🚨</div>
+                            <div>
+                                <h5 class="font-medium text-sm text-red-800">UC Application Deadline</h5>
+                                <p class="text-xs text-red-700 mt-1">November 30, 2025 • 45 days remaining</p>
+                                <p class="text-xs text-red-600 mt-1">Complete remaining prerequisites immediately!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <h5 class="font-medium text-sm text-yellow-800">Prerequisites Completion</h5>
+                            <p class="text-xs text-yellow-700 mt-1">Due: October 15, 2025 • 30 days remaining</p>
+                            <div class="mt-2">
+                                <div class="text-xs text-yellow-600">Remaining: Calculus II, CS 101, CS 102</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h5 class="font-medium text-sm text-blue-800">Personal Insight Questions</h5>
+                            <p class="text-xs text-blue-700 mt-1">Due: November 15, 2025 • 60 days remaining</p>
+                            <div class="mt-2">
+                                <div class="text-xs text-blue-600">Start drafting your responses now</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="closeModal()" class="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                        I'll get started!
+                    </button>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        function openResource(resourceType) {
+            const resources = {
+                'assist': 'ASSIST.org - Course transferability database opened in new tab',
+                'uc-website': 'UC Admissions website opened for official transfer information',
+                'counseling': 'Transfer counseling appointment scheduler opened',
+                'financial-aid': 'Financial aid and scholarships information page opened'
+            };
+            
+            showNotification(`🌐 ${resources[resourceType]}`, 'info');
+        }
+
+        // Utility functions
+        function animateElements() {
+            anime({
+                targets: '.requirement-card, .uc-campus-card, .course-card, .resource-link',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuart'
+            });
+        }
+
+        function createModal(title, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-charcoal-gray">${title}</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+            return modal;
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                anime({
+                    targets: modal,
+                    opacity: [1, 0],
+                    duration: 200,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        modal.remove();
+                    }
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                duration: 500,
+                easing: 'easeOutQuart'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    duration: 300,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        notification.remove();
+                    }
+                });
+            }, 4000);
+        }
+
+        // Global function exports
+        window.selectCampus = selectCampus;
+        window.removeCourse = removeCourse;
+        window.savePlan = savePlan;
+        window.exportPlan = exportPlan;
+        window.optimizePlan = optimizePlan;
+        window.viewApplicationTimeline = viewApplicationTimeline;
+        window.openResource = openResource;
+        window.closeModal = closeModal;
+    </script>
+</body>
+</html>

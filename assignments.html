@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Manager - ASCA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage-green: #7C9885;
+            --warm-orange: #E8A87C;
+            --soft-blue: #A8DADC;
+            --cream-white: #F1FAEE;
+            --charcoal-gray: #457B9D;
+            --light-gray: #E9ECEF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--cream-white) 0%, #E8F4F8 100%);
+            min-height: 100vh;
+        }
+        
+        .assignment-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        
+        .assignment-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .assignment-card.dragging {
+            opacity: 0.8;
+            transform: rotate(5deg);
+            cursor: grabbing;
+        }
+        
+        .priority-high { border-left: 4px solid #EF4444; }
+        .priority-medium { border-left: 4px solid #F59E0B; }
+        .priority-low { border-left: 4px solid #10B981; }
+        
+        .calendar-cell {
+            min-height: 120px;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .calendar-cell:hover {
+            background: rgba(124, 152, 133, 0.05);
+        }
+        
+        .calendar-cell.today {
+            background: rgba(168, 218, 220, 0.1);
+            border-color: var(--soft-blue);
+        }
+        
+        .calendar-cell.has-assignment {
+            background: rgba(232, 168, 124, 0.05);
+        }
+        
+        .priority-matrix {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .matrix-quadrant {
+            border: 1px solid #E5E7EB;
+            transition: all 0.3s ease;
+            min-height: 150px;
+        }
+        
+        .matrix-quadrant:hover {
+            background: rgba(124, 152, 133, 0.05);
+        }
+        
+        .matrix-quadrant.urgent-important { background: rgba(239, 68, 68, 0.05); }
+        .matrix-quadrant.important-not-urgent { background: rgba(59, 130, 246, 0.05); }
+        .matrix-quadrant.urgent-not-important { background: rgba(245, 158, 11, 0.05); }
+        .matrix-quadrant.neither { background: rgba(107, 114, 128, 0.05); }
+        
+        .progress-bar {
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage-green), var(--warm-orange));
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .schedule-item {
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--soft-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .schedule-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--sage-green);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--sage-green);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .floating-add-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--sage-green), var(--soft-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+        
+        .floating-add-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .ai-suggestion {
+            background: linear-gradient(135deg, rgba(124, 152, 133, 0.1), rgba(168, 218, 220, 0.1));
+            border: 1px solid rgba(124, 152, 133, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        
+        .deadline-warning {
+            animation: pulse-warning 2s infinite;
+        }
+        
+        @keyframes pulse-warning {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.1); }
+            50% { background-color: rgba(239, 68, 68, 0.2); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">AI</span>
+                        </div>
+                        <span class="text-xl font-bold text-charcoal-gray">ASCA</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="nav-link text-gray-600">Dashboard</a>
+                        <a href="assignments.html" class="nav-link text-charcoal-gray font-medium">Assignments</a>
+                        <a href="research.html" class="nav-link text-gray-600">Research</a>
+                        <a href="study-groups.html" class="nav-link text-gray-600">Study Groups</a>
+                        <a href="transfer.html" class="nav-link text-gray-600">Transfer</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-charcoal-gray">
+                        📅 <span id="assignment-count">7</span> Active Assignments
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-warm-orange to-sage-green rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-charcoal-gray mb-4">Assignment Manager</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Your intelligent task organization system that syncs with multiple platforms, 
+                    prioritizes assignments, and creates optimized study schedules.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Assignment Lists -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- Priority Matrix -->
+                <div class="priority-matrix p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-charcoal-gray">Priority Matrix</h2>
+                        <div class="text-sm text-gray-500">
+                            <span class="inline-block w-3 h-3 bg-red-400 rounded-full mr-1"></span>High
+                            <span class="inline-block w-3 h-3 bg-yellow-400 rounded-full mr-1 ml-2"></span>Medium
+                            <span class="inline-block w-3 h-3 bg-green-400 rounded-full mr-1 ml-2"></span>Low
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Urgent & Important -->
+                        <div class="matrix-quadrant urgent-important p-4 rounded-lg">
+                            <h3 class="font-semibold text-red-600 mb-3">🔥 Urgent & Important</h3>
+                            <div id="urgent-important" class="space-y-2 min-h-[100px]">
+                                <div class="assignment-card priority-high p-3 cursor-pointer" data-assignment="history-essay">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">History Essay</h4>
+                                            <p class="text-xs text-gray-500">Due: Tomorrow</p>
+                                        </div>
+                                        <div class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">High</div>
+                                    </div>
+                                </div>
+                                <div class="assignment-card priority-high p-3 cursor-pointer" data-assignment="math-exam">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">Math Exam</h4>
+                                            <p class="text-xs text-gray-500">Due: Friday</p>
+                                        </div>
+                                        <div class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">High</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Important & Not Urgent -->
+                        <div class="matrix-quadrant important-not-urgent p-4 rounded-lg">
+                            <h3 class="font-semibold text-blue-600 mb-3">📅 Important & Not Urgent</h3>
+                            <div id="important-not-urgent" class="space-y-2 min-h-[100px]">
+                                <div class="assignment-card priority-medium p-3 cursor-pointer" data-assignment="research-paper">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">Research Paper</h4>
+                                            <p class="text-xs text-gray-500">Due: Next Week</p>
+                                        </div>
+                                        <div class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded">Medium</div>
+                                    </div>
+                                </div>
+                                <div class="assignment-card priority-medium p-3 cursor-pointer" data-assignment="lab-report">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">Lab Report</h4>
+                                            <p class="text-xs text-gray-500">Due: Next Week</p>
+                                        </div>
+                                        <div class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded">Medium</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Urgent & Not Important -->
+                        <div class="matrix-quadrant urgent-not-important p-4 rounded-lg">
+                            <h3 class="font-semibold text-yellow-600 mb-3">⚡ Urgent & Not Important</h3>
+                            <div id="urgent-not-important" class="space-y-2 min-h-[100px]">
+                                <div class="assignment-card priority-medium p-3 cursor-pointer" data-assignment="discussion-post">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">Discussion Post</h4>
+                                            <p class="text-xs text-gray-500">Due: Tonight</p>
+                                        </div>
+                                        <div class="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded">Medium</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Neither -->
+                        <div class="matrix-quadrant neither p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-600 mb-3">📋 Neither</h3>
+                            <div id="neither" class="space-y-2 min-h-[100px]">
+                                <div class="assignment-card priority-low p-3 cursor-pointer" data-assignment="reading-notes">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="font-medium text-sm">Reading Notes</h4>
+                                            <p class="text-xs text-gray-500">Due: Next Month</p>
+                                        </div>
+                                        <div class="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Low</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Calendar View -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-charcoal-gray">Assignment Calendar</h2>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="previousWeek()" class="p-2 hover:bg-gray-100 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                </svg>
+                            </button>
+                            <span class="font-medium text-charcoal-gray" id="current-week">Week of Nov 11, 2025</span>
+                            <button onclick="nextWeek()" class="p-2 hover:bg-gray-100 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-7 gap-1 mb-4">
+                        <div class="text-center font-medium text-gray-600 py-2">Mon</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Tue</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Wed</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Thu</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Fri</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Sat</div>
+                        <div class="text-center font-medium text-gray-600 py-2">Sun</div>
+                    </div>
+                    
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                        <!-- Calendar cells will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Schedule & AI Suggestions -->
+            <div class="space-y-8">
+                
+                <!-- Today's Schedule -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray mb-4">Today's Optimized Schedule</h2>
+                    <div class="space-y-3" id="today-schedule">
+                        <div class="schedule-item p-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Math Exam Prep</h4>
+                                    <p class="text-xs text-gray-500">9:00 AM - 11:00 AM</p>
+                                </div>
+                                <div class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">High Priority</div>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item p-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">History Essay Writing</h4>
+                                    <p class="text-xs text-gray-500">1:00 PM - 3:00 PM</p>
+                                </div>
+                                <div class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Research</div>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item p-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Study Group Session</h4>
+                                    <p class="text-xs text-gray-500">4:00 PM - 5:30 PM</p>
+                                </div>
+                                <div class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">Collaboration</div>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-item p-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-medium text-sm">Wellness Break</h4>
+                                    <p class="text-xs text-gray-500">6:00 PM - 6:30 PM</p>
+                                </div>
+                                <div class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded">Self Care</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="optimizeSchedule()" class="w-full mt-4 bg-sage-green text-white py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                        ⚡ Optimize Schedule
+                    </button>
+                </div>
+                
+                <!-- AI Suggestions -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray mb-4">🤖 AI Recommendations</h2>
+                    <div class="space-y-4">
+                        <div class="ai-suggestion">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-blue-500 text-lg">💡</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Schedule Optimization</h4>
+                                    <p class="text-xs text-gray-600">Consider moving your History Essay to tomorrow morning when you're most productive.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ai-suggestion">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-red-500 text-lg">⚠️</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Deadline Alert</h4>
+                                    <p class="text-xs text-gray-600">Your Math Exam is in 2 days. Add 2 more study sessions for better preparation.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ai-suggestion">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-green-500 text-lg">🎯</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Productivity Tip</h4>
+                                    <p class="text-xs text-gray-600">You're most productive in the morning. Schedule complex tasks before 11 AM.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ai-suggestion">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-purple-500 text-lg">🤝</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Study Group Match</h4>
+                                    <p class="text-xs text-gray-600">3 students in your Chemistry class are available for a study session tomorrow.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Analytics -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray mb-4">📊 Progress Analytics</h2>
+                    <div id="progress-chart" style="height: 200px;"></div>
+                    
+                    <div class="mt-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">This Week's Completion</span>
+                            <span class="font-semibold text-sage-green">85%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 85%"></div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">On-Time Submission Rate</span>
+                            <span class="font-semibold text-warm-orange">92%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 92%"></div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Study Efficiency Score</span>
+                            <span class="font-semibold text-soft-blue">78%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Add Button -->
+    <div class="floating-add-btn" onclick="showAddAssignmentModal()">
+        +
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal-gray text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">AI</span>
+                    </div>
+                    <span class="text-2xl font-bold">EduAgents</span>
+                </div>
+                <p class="text-white/80 mb-6">Empowering academic success through collaborative AI intelligence</p>
+                <div class="flex justify-center space-x-6 text-sm text-white/60">
+                    <span>© 2025 Adaptive Student Coaching Agents</span>
+                    <span>•</span>
+                    <span>Built with Multi-Agent Collaboration</span>
+                    <span>•</span>
+                    <span>Powered by Gemini LLM</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Assignment management functionality
+        let assignments = [
+            { id: 'history-essay', title: 'History Essay', priority: 'high', dueDate: '2025-11-09', progress: 60 },
+            { id: 'math-exam', title: 'Math Exam', priority: 'high', dueDate: '2025-11-10', progress: 30 },
+            { id: 'research-paper', title: 'Research Paper', priority: 'medium', dueDate: '2025-11-15', progress: 20 },
+            { id: 'lab-report', title: 'Lab Report', priority: 'medium', dueDate: '2025-11-16', progress: 45 },
+            { id: 'discussion-post', title: 'Discussion Post', priority: 'medium', dueDate: '2025-11-08', progress: 80 },
+            { id: 'reading-notes', title: 'Reading Notes', priority: 'low', dueDate: '2025-12-01', progress: 10 }
+        ];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            generateCalendar();
+            initializePriorityMatrix();
+            initializeProgressChart();
+            initializeDragAndDrop();
+            
+            // Animate elements on load
+            anime({
+                targets: '.assignment-card, .schedule-item, .ai-suggestion',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuart'
+            });
+        });
+
+        // Generate calendar
+        function generateCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + 1); // Monday
+
+            for (let i = 0; i < 7; i++) {
+                const cellDate = new Date(startOfWeek);
+                cellDate.setDate(startOfWeek.getDate() + i);
+                
+                const cell = document.createElement('div');
+                cell.className = 'calendar-cell p-2 cursor-pointer';
+                
+                if (cellDate.toDateString() === today.toDateString()) {
+                    cell.classList.add('today');
+                }
+                
+                // Check for assignments on this date
+                const dayAssignments = assignments.filter(assignment => {
+                    const dueDate = new Date(assignment.dueDate);
+                    return dueDate.toDateString() === cellDate.toDateString();
+                });
+                
+                if (dayAssignments.length > 0) {
+                    cell.classList.add('has-assignment');
+                }
+                
+                cell.innerHTML = `
+                    <div class="font-medium text-sm mb-1">${cellDate.getDate()}</div>
+                    ${dayAssignments.map(assignment => `
+                        <div class="text-xs p-1 mb-1 bg-${assignment.priority === 'high' ? 'red' : assignment.priority === 'medium' ? 'yellow' : 'green'}-100 text-${assignment.priority === 'high' ? 'red' : assignment.priority === 'medium' ? 'yellow' : 'green'}-600 rounded">
+                            ${assignment.title}
+                        </div>
+                    `).join('')}
+                `;
+                
+                cell.addEventListener('click', () => showDayDetails(cellDate, dayAssignments));
+                grid.appendChild(cell);
+            }
+        }
+
+        // Initialize priority matrix with drag and drop
+        function initializePriorityMatrix() {
+            const quadrants = ['urgent-important', 'important-not-urgent', 'urgent-not-important', 'neither'];
+            
+            quadrants.forEach(quadrant => {
+                const element = document.getElementById(quadrant);
+                element.addEventListener('dragover', handleDragOver);
+                element.addEventListener('drop', handleDrop);
+            });
+        }
+
+        // Initialize drag and drop
+        function initializeDragAndDrop() {
+            const assignmentCards = document.querySelectorAll('.assignment-card');
+            assignmentCards.forEach(card => {
+                card.draggable = true;
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', e.target.dataset.assignment);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const assignmentId = e.dataTransfer.getData('text/plain');
+            const assignment = assignments.find(a => a.id === assignmentId);
+            
+            if (assignment) {
+                // Update assignment priority based on quadrant
+                const quadrant = e.currentTarget.id;
+                switch(quadrant) {
+                    case 'urgent-important':
+                        assignment.priority = 'high';
+                        break;
+                    case 'important-not-urgent':
+                    case 'urgent-not-important':
+                        assignment.priority = 'medium';
+                        break;
+                    case 'neither':
+                        assignment.priority = 'low';
+                        break;
+                }
+                
+                showNotification(`✅ ${assignment.title} priority updated to ${assignment.priority}!`, 'success');
+                regenerateMatrix();
+            }
+        }
+
+        function regenerateMatrix() {
+            const quadrants = {
+                'urgent-important': document.getElementById('urgent-important'),
+                'important-not-urgent': document.getElementById('important-not-urgent'),
+                'urgent-not-important': document.getElementById('urgent-not-important'),
+                'neither': document.getElementById('neither')
+            };
+            
+            // Clear all quadrants
+            Object.values(quadrants).forEach(quadrant => {
+                quadrant.innerHTML = '';
+            });
+            
+            // Redistribute assignments based on priority and due date
+            assignments.forEach(assignment => {
+                const dueDate = new Date(assignment.dueDate);
+                const today = new Date();
+                const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                
+                let quadrant;
+                if (assignment.priority === 'high' && daysUntilDue <= 3) {
+                    quadrant = 'urgent-important';
+                } else if (assignment.priority === 'high' && daysUntilDue > 3) {
+                    quadrant = 'important-not-urgent';
+                } else if (assignment.priority === 'medium' && daysUntilDue <= 3) {
+                    quadrant = 'urgent-not-important';
+                } else {
+                    quadrant = 'neither';
+                }
+                
+                const card = createAssignmentCard(assignment);
+                quadrants[quadrant].appendChild(card);
+            });
+            
+            initializeDragAndDrop();
+        }
+
+        function createAssignmentCard(assignment) {
+            const card = document.createElement('div');
+            card.className = `assignment-card priority-${assignment.priority} p-3 cursor-pointer`;
+            card.dataset.assignment = assignment.id;
+            
+            const dueDate = new Date(assignment.dueDate);
+            const today = new Date();
+            const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-medium text-sm">${assignment.title}</h4>
+                        <p class="text-xs text-gray-500">Due: ${daysUntilDue === 0 ? 'Today' : daysUntilDue === 1 ? 'Tomorrow' : `${daysUntilDue} days`}</p>
+                    </div>
+                    <div class="text-xs bg-${assignment.priority === 'high' ? 'red' : assignment.priority === 'medium' ? 'yellow' : 'green'}-100 text-${assignment.priority === 'high' ? 'red' : assignment.priority === 'medium' ? 'yellow' : 'green'}-600 px-2 py-1 rounded">
+                        ${assignment.priority.charAt(0).toUpperCase() + assignment.priority.slice(1)}
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${assignment.progress}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">${assignment.progress}% complete</div>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => showAssignmentDetails(assignment));
+            return card;
+        }
+
+        // Initialize progress chart
+        function initializeProgressChart() {
+            const chartDom = document.getElementById('progress-chart');
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    axisLine: { show: false },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    splitLine: { 
+                        lineStyle: { color: '#E5E7EB' }
+                    }
+                },
+                series: [{
+                    name: 'Completion Rate',
+                    data: [75, 82, 78, 85, 90, 88, 92],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#7C9885',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#7C9885'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(124, 152, 133, 0.3)'
+                            }, {
+                                offset: 1, color: 'rgba(124, 152, 133, 0.05)'
+                            }]
+                        }
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                }
+            };
+            
+            myChart.setOption(option);
+        }
+
+        // Modal and interaction functions
+        function showAddAssignmentModal() {
+            const modal = createModal('Add New Assignment', `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Title</label>
+                        <input type="text" id="assignment-title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., History Essay">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                        <input type="date" id="assignment-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <select id="assignment-priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="assignment-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Brief description of the assignment..."></textarea>
+                    </div>
+                    <button onclick="addAssignment()" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">Add Assignment</button>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        function addAssignment() {
+            const title = document.getElementById('assignment-title').value;
+            const date = document.getElementById('assignment-date').value;
+            const priority = document.getElementById('assignment-priority').value;
+            
+            if (!title || !date) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            const newAssignment = {
+                id: title.toLowerCase().replace(/\s+/g, '-'),
+                title: title,
+                priority: priority,
+                dueDate: date,
+                progress: 0
+            };
+            
+            assignments.push(newAssignment);
+            regenerateMatrix();
+            generateCalendar();
+            
+            showNotification(`✅ ${title} added successfully!`, 'success');
+            closeModal();
+            
+            // Update assignment count
+            document.getElementById('assignment-count').textContent = assignments.length;
+        }
+
+        function showAssignmentDetails(assignment) {
+            const modal = createModal(assignment.title, `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-600">Priority</label>
+                            <div class="text-sm font-medium text-${assignment.priority === 'high' ? 'red' : assignment.priority === 'medium' ? 'yellow' : 'green'}-600">
+                                ${assignment.priority.charAt(0).toUpperCase() + assignment.priority.slice(1)}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-600">Due Date</label>
+                            <div class="text-sm font-medium text-charcoal-gray">${new Date(assignment.dueDate).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-medium text-gray-600">Progress</label>
+                        <div class="mt-1">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${assignment.progress}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">${assignment.progress}% complete</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button onclick="updateProgress('${assignment.id}')" class="flex-1 bg-sage-green text-white py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                            Update Progress
+                        </button>
+                        <button onclick="closeModal()" class="flex-1 bg-gray-200 text-charcoal-gray py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        function updateProgress(assignmentId) {
+            const assignment = assignments.find(a => a.id === assignmentId);
+            if (assignment) {
+                assignment.progress = Math.min(100, assignment.progress + 25);
+                showNotification(`📈 Progress updated for ${assignment.title}!`, 'success');
+                closeModal();
+                regenerateMatrix();
+            }
+        }
+
+        function optimizeSchedule() {
+            showNotification('⚡ AI is optimizing your schedule...', 'info');
+            
+            setTimeout(() => {
+                showNotification('✅ Schedule optimized! Check the updated recommendations.', 'success');
+                
+                // Add new AI suggestion
+                const suggestionsContainer = document.querySelector('.space-y-4');
+                const newSuggestion = document.createElement('div');
+                newSuggestion.className = 'ai-suggestion';
+                newSuggestion.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="text-sage-green text-lg">🎯</div>
+                        <div>
+                            <h4 class="font-medium text-sm mb-1">Schedule Optimized</h4>
+                            <p class="text-xs text-gray-600">Your schedule has been rearranged for maximum productivity and minimal stress.</p>
+                        </div>
+                    </div>
+                `;
+                suggestionsContainer.insertBefore(newSuggestion, suggestionsContainer.firstChild);
+                
+                anime({
+                    targets: newSuggestion,
+                    translateX: [-300, 0],
+                    opacity: [0, 1],
+                    duration: 500,
+                    easing: 'easeOutQuart'
+                });
+            }, 2000);
+        }
+
+        // Calendar navigation
+        function previousWeek() {
+            showNotification('📅 Navigating to previous week...', 'info');
+        }
+
+        function nextWeek() {
+            showNotification('📅 Navigating to next week...', 'info');
+        }
+
+        function showDayDetails(date, dayAssignments) {
+            const modal = createModal(date.toLocaleDateString(), `
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-charcoal-gray">${dayAssignments.length} assignment${dayAssignments.length !== 1 ? 's' : ''} due</h3>
+                    ${dayAssignments.length > 0 ? `
+                        <div class="space-y-2">
+                            ${dayAssignments.map(assignment => `
+                                <div class="p-3 bg-gray-50 rounded-lg">
+                                    <h4 class="font-medium text-sm">${assignment.title}</h4>
+                                    <p class="text-xs text-gray-500">Priority: ${assignment.priority}</p>
+                                    <div class="mt-2">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: ${assignment.progress}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p class="text-sm text-gray-600">No assignments due this day.</p>'}
+                    <button onclick="closeModal()" class="w-full bg-gray-200 text-charcoal-gray py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                        Close
+                    </button>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        // Utility functions
+        function createModal(title, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-charcoal-gray">${title}</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+            return modal;
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                anime({
+                    targets: modal,
+                    opacity: [1, 0],
+                    duration: 200,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        modal.remove();
+                    }
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                duration: 500,
+                easing: 'easeOutQuart'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    duration: 300,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        notification.remove();
+                    }
+                });
+            }, 4000);
+        }
+
+        // Global function exports
+        window.showAddAssignmentModal = showAddAssignmentModal;
+        window.addAssignment = addAssignment;
+        window.updateProgress = updateProgress;
+        window.optimizeSchedule = optimizeSchedule;
+        window.previousWeek = previousWeek;
+        window.nextWeek = nextWeek;
+        window.closeModal = closeModal;
+    </script>
+</body>
+</html>

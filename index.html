@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Student Coaching Agents - Academic Success Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link href="https://unpkg.com/splitting@1.0.6/dist/splitting.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage-green: #7C9885;
+            --warm-orange: #E8A87C;
+            --soft-blue: #A8DADC;
+            --cream-white: #F1FAEE;
+            --charcoal-gray: #457B9D;
+            --light-gray: #E9ECEF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--cream-white) 0%, #E8F4F8 100%);
+            min-height: 100vh;
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, var(--soft-blue) 0%, var(--sage-green) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('resources/academic_success_abstract.png') center/cover;
+            opacity: 0.1;
+            z-index: 1;
+        }
+        
+        .agent-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .agent-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-active { background: #4CAF50; }
+        .status-busy { background: #FF9800; }
+        .status-idle { background: var(--light-gray); }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .collaboration-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, var(--sage-green), var(--warm-orange));
+            opacity: 0.6;
+            animation: flow 3s ease-in-out infinite;
+        }
+        
+        @keyframes flow {
+            0%, 100% { transform: scaleX(1); }
+            50% { transform: scaleX(1.1); }
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        
+        .typing-text {
+            color: var(--charcoal-gray);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--sage-green);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--sage-green);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .achievement-badge {
+            background: linear-gradient(135deg, var(--warm-orange), #F4A261);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(232, 168, 124, 0.5); }
+            to { box-shadow: 0 0 20px rgba(232, 168, 124, 0.8); }
+        }
+        
+        .activity-item {
+            border-left: 3px solid var(--sage-green);
+            transition: all 0.3s ease;
+        }
+        
+        .activity-item:hover {
+            background: rgba(124, 152, 133, 0.05);
+            border-left-color: var(--warm-orange);
+        }
+        
+        #collaboration-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">AI</span>
+                        </div>
+                        <span class="text-xl font-bold text-charcoal-gray">ASCA</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="nav-link text-charcoal-gray font-medium">Dashboard</a>
+                        <a href="assignments.html" class="nav-link text-gray-600">Assignments</a>
+                        <a href="research.html" class="nav-link text-gray-600">Research</a>
+                        <a href="study-groups.html" class="nav-link text-gray-600">Study Groups</a>
+                        <a href="transfer.html" class="nav-link text-gray-600">Transfer</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="achievement-badge text-white px-3 py-1 rounded-full text-sm font-medium">
+                        🏆 5 Agents Active
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-warm-orange to-sage-green rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg relative py-20">
+        <div id="collaboration-canvas"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 splitting-text" data-splitting>
+                    Adaptive Student Coaching Agents
+                </h1>
+                <div class="text-xl md:text-2xl text-white/90 mb-8">
+                    <span id="typed-text" class="typing-text"></span>
+                </div>
+                <p class="text-lg text-white/80 max-w-3xl mx-auto mb-12">
+                    Experience the future of education with our collaborative AI agents working together 
+                    to support your academic journey, from assignment management to transfer planning.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button onclick="performFullAnalysis()" class="bg-white text-charcoal-gray px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        🤖 Run Multi-Agent Analysis
+                    </button>
+                    <button onclick="analyzeAssignmentsWithBackend()" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-charcoal-gray transition-colors">
+                        📊 Analyze Workload
+                    </button>
+                    <button onclick="createScheduleWithBackend()" class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-charcoal-gray transition-colors">
+                        📅 Create Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agent Status Dashboard -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-charcoal-gray mb-4">AI Agent Status</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Our intelligent agents are constantly working together to support your academic success. 
+                    Each agent specializes in different aspects of your educational journey.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative">
+                <!-- Assignment Manager Agent -->
+                <div class="agent-card rounded-xl p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">📅</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Assignment Manager</h3>
+                                <p class="text-sm text-gray-500">Task Organization</p>
+                            </div>
+                        </div>
+                        <div class="agent-status status-active"></div>
+                    </div>
+                    <p class="text-gray-600 mb-4">Organizes assignments, schedules deadlines, and optimizes your study timeline.</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Active Tasks</span>
+                            <span class="font-medium">7</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Next Deadline</span>
+                            <span class="font-medium text-warm-orange">2 hours</span>
+                        </div>
+                    </div>
+                    <button onclick="showAgentDetails('assignment')" class="w-full mt-4 bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition-colors">
+                        View Details
+                    </button>
+                </div>
+
+                <!-- Research Coach Agent -->
+                <div class="agent-card rounded-xl p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">🔍</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Research Coach</h3>
+                                <p class="text-sm text-gray-500">Writing Support</p>
+                            </div>
+                        </div>
+                        <div class="agent-status status-busy"></div>
+                    </div>
+                    <p class="text-gray-600 mb-4">Assists with research, thesis development, and academic writing improvement.</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Sources Found</span>
+                            <span class="font-medium">23</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Writing Score</span>
+                            <span class="font-medium text-sage-green">85%</span>
+                        </div>
+                    </div>
+                    <button onclick="showAgentDetails('research')" class="w-full mt-4 bg-green-50 text-green-600 py-2 rounded-lg hover:bg-green-100 transition-colors">
+                        View Details
+                    </button>
+                </div>
+
+                <!-- Study Group Finder Agent -->
+                <div class="agent-card rounded-xl p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">👥</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Study Group Finder</h3>
+                                <p class="text-sm text-gray-500">Peer Matching</p>
+                            </div>
+                        </div>
+                        <div class="agent-status status-active"></div>
+                    </div>
+                    <p class="text-gray-600 mb-4">Connects you with compatible study partners and organizes collaborative sessions.</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Matches Found</span>
+                            <span class="font-medium">12</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Next Session</span>
+                            <span class="font-medium text-warm-orange">Tomorrow</span>
+                        </div>
+                    </div>
+                    <button onclick="showAgentDetails('study')" class="w-full mt-4 bg-purple-50 text-purple-600 py-2 rounded-lg hover:bg-purple-100 transition-colors">
+                        View Details
+                    </button>
+                </div>
+
+                <!-- Transfer Advisor Agent -->
+                <div class="agent-card rounded-xl p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">🎓</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Transfer Advisor</h3>
+                                <p class="text-sm text-gray-500">Pathway Planning</p>
+                            </div>
+                        </div>
+                        <div class="agent-status status-active"></div>
+                    </div>
+                    <p class="text-gray-600 mb-4">Guides UC transfer requirements and monitors application progress.</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Requirements Met</span>
+                            <span class="font-medium">18/24</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">GPA Progress</span>
+                            <span class="font-medium text-sage-green">3.6/4.0</span>
+                        </div>
+                    </div>
+                    <button onclick="showAgentDetails('transfer')" class="w-full mt-4 bg-orange-50 text-orange-600 py-2 rounded-lg hover:bg-orange-100 transition-colors">
+                        View Details
+                    </button>
+                </div>
+
+                <!-- Wellness Coach Agent -->
+                <div class="agent-card rounded-xl p-6 relative">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">🧘</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Wellness Coach</h3>
+                                <p class="text-sm text-gray-500">Balance & Focus</p>
+                            </div>
+                        </div>
+                        <div class="agent-status status-active"></div>
+                    </div>
+                    <p class="text-gray-600 mb-4">Promotes study-life balance with wellness check-ins and break recommendations.</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Wellness Score</span>
+                            <span class="font-medium text-sage-green">92%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Break Reminder</span>
+                            <span class="font-medium text-warm-orange">15 min</span>
+                        </div>
+                    </div>
+                    <button onclick="showAgentDetails('wellness')" class="w-full mt-4 bg-teal-50 text-teal-600 py-2 rounded-lg hover:bg-teal-100 transition-colors">
+                        View Details
+                    </button>
+                </div>
+
+                <!-- Collaboration Center -->
+                <div class="agent-card rounded-xl p-6 relative bg-gradient-to-br from-sage-green to-soft-blue text-white">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xl">🤝</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Agent Collaboration</h3>
+                                <p class="text-sm text-white/80">Unified Support</p>
+                            </div>
+                        </div>
+                        <div class="agent-status bg-white/30"></div>
+                    </div>
+                    <p class="text-white/90 mb-4">All agents working together to optimize your academic success and well-being.</p>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/80">Collaborations Today</span>
+                            <span class="font-medium">47</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/80">Success Rate</span>
+                            <span class="font-medium">94%</span>
+                        </div>
+                    </div>
+                    <button onclick="showCollaborationCenter()" class="w-full bg-white/20 text-white py-2 rounded-lg hover:bg-white/30 transition-colors">
+                        View Collaborations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions Panel -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-charcoal-gray mb-4">Quick Actions</h2>
+                <p class="text-gray-600">Get immediate support from your AI coaching team</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <button onclick="quickAction('assignment')" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                    <div class="text-blue-500 text-3xl mb-3 group-hover:scale-110 transition-transform">📝</div>
+                    <h3 class="font-semibold text-charcoal-gray mb-2">Add Assignment</h3>
+                    <p class="text-gray-600 text-sm">Quick task creation with AI scheduling</p>
+                </button>
+                
+                <button onclick="quickAction('research')" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                    <div class="text-green-500 text-3xl mb-3 group-hover:scale-110 transition-transform">📚</div>
+                    <h3 class="font-semibold text-charcoal-gray mb-2">Research Help</h3>
+                    <p class="text-gray-600 text-sm">Get sources and writing assistance</p>
+                </button>
+                
+                <button onclick="quickAction('study')" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                    <div class="text-purple-500 text-3xl mb-3 group-hover:scale-110 transition-transform">👥</div>
+                    <h3 class="font-semibold text-charcoal-gray mb-2">Find Study Group</h3>
+                    <p class="text-gray-600 text-sm">Connect with compatible peers</p>
+                </button>
+                
+                <button onclick="quickAction('wellness')" class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                    <div class="text-teal-500 text-3xl mb-3 group-hover:scale-110 transition-transform">🧘</div>
+                    <h3 class="font-semibold text-charcoal-gray mb-2">Wellness Check</h3>
+                    <p class="text-gray-600 text-sm">Quick stress and balance assessment</p>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity Feed -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Activity Feed -->
+                <div>
+                    <h2 class="text-2xl font-bold text-charcoal-gray mb-6">Recent Agent Activity</h2>
+                    <div class="space-y-4">
+                        <div class="activity-item pl-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="text-blue-600 text-sm">📅</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-charcoal-gray">Assignment Manager updated your schedule</p>
+                                    <p class="text-xs text-gray-500">2 minutes ago • Prioritized 3 new tasks</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item pl-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span class="text-green-600 text-sm">🔍</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-charcoal-gray">Research Coach found relevant sources</p>
+                                    <p class="text-xs text-gray-500">5 minutes ago • 8 articles for your essay</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item pl-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <span class="text-purple-600 text-sm">👥</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-charcoal-gray">Study Group matched you with peers</p>
+                                    <p class="text-xs text-gray-500">12 minutes ago • Chemistry study session tomorrow</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item pl-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <span class="text-orange-600 text-sm">🎓</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-charcoal-gray">Transfer Advisor updated requirements</p>
+                                    <p class="text-xs text-gray-500">18 minutes ago • 2 new UC prerequisites met</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item pl-4 py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                                    <span class="text-teal-600 text-sm">🧘</span>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-charcoal-gray">Wellness Coach recommended a break</p>
+                                    <p class="text-xs text-gray-500">25 minutes ago • 5-minute mindfulness exercise</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Success Metrics -->
+                <div>
+                    <h2 class="text-2xl font-bold text-charcoal-gray mb-6">Academic Success Metrics</h2>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="text-center">
+                            <div class="relative w-24 h-24 mx-auto mb-3">
+                                <svg class="progress-ring w-24 h-24">
+                                    <circle cx="48" cy="48" r="40" stroke="#E9ECEF" stroke-width="8" fill="transparent"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#7C9885" stroke-width="8" fill="transparent" 
+                                            stroke-dasharray="251.2" stroke-dashoffset="62.8" class="progress-ring-circle"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xl font-bold text-charcoal-gray">75%</span>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium text-charcoal-gray">Assignment Completion</p>
+                            <p class="text-xs text-gray-500">This semester</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-24 h-24 mx-auto mb-3">
+                                <svg class="progress-ring w-24 h-24">
+                                    <circle cx="48" cy="48" r="40" stroke="#E9ECEF" stroke-width="8" fill="transparent"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#E8A87C" stroke-width="8" fill="transparent" 
+                                            stroke-dasharray="251.2" stroke-dashoffset="50.24" class="progress-ring-circle"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xl font-bold text-charcoal-gray">80%</span>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium text-charcoal-gray">Study Efficiency</p>
+                            <p class="text-xs text-gray-500">With agent support</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-24 h-24 mx-auto mb-3">
+                                <svg class="progress-ring w-24 h-24">
+                                    <circle cx="48" cy="48" r="40" stroke="#E9ECEF" stroke-width="8" fill="transparent"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#A8DADC" stroke-width="8" fill="transparent" 
+                                            stroke-dasharray="251.2" stroke-dashoffset="37.68" class="progress-ring-circle"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xl font-bold text-charcoal-gray">85%</span>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium text-charcoal-gray">Wellness Score</p>
+                            <p class="text-xs text-gray-500">Balance maintained</p>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="relative w-24 h-24 mx-auto mb-3">
+                                <svg class="progress-ring w-24 h-24">
+                                    <circle cx="48" cy="48" r="40" stroke="#E9ECEF" stroke-width="8" fill="transparent"/>
+                                    <circle cx="48" cy="48" r="40" stroke="#457B9D" stroke-width="8" fill="transparent" 
+                                            stroke-dasharray="251.2" stroke-dashoffset="25.12" class="progress-ring-circle"/>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-xl font-bold text-charcoal-gray">90%</span>
+                                </div>
+                            </div>
+                            <p class="text-sm font-medium text-charcoal-gray">Transfer Readiness</p>
+                            <p class="text-xs text-gray-500">UC requirements</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                        <h3 class="font-semibold text-charcoal-gray mb-2">This Week's Achievements</h3>
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-warm-orange">🏆</span>
+                                <span class="text-sm text-gray-600">Completed 5 assignments ahead of schedule</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sage-green">📈</span>
+                                <span class="text-sm text-gray-600">Improved writing score by 12 points</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-soft-blue">🤝</span>
+                                <span class="text-sm text-gray-600">Joined 2 new study groups</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal-gray text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">AI</span>
+                    </div>
+                    <span class="text-2xl font-bold">ASCA</span>
+                </div>
+                <p class="text-white/80 mb-6">Empowering academic success through collaborative AI intelligence</p>
+                <div class="flex justify-center space-x-6 text-sm text-white/60">
+                    <span>© 2025 Adaptive Student Coaching Agents</span>
+                    <span>•</span>
+                    <span>Built with Multi-Agent Collaboration</span>
+                    <span>•</span>
+                    <span>Powered by Gemini LLM</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+    <script src="api-client.js"></script>
+</body>
+</html>
