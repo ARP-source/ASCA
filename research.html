@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research & Writing Coach - ASCA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage-green: #7C9885;
+            --warm-orange: #E8A87C;
+            --soft-blue: #A8DADC;
+            --cream-white: #F1FAEE;
+            --charcoal-gray: #457B9D;
+            --light-gray: #E9ECEF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--cream-white) 0%, #E8F4F8 100%);
+            min-height: 100vh;
+        }
+        
+        .research-workspace {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+        }
+        
+        .writing-editor {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            min-height: 400px;
+            padding: 16px;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        
+        .writing-editor:focus {
+            outline: none;
+            border-color: var(--sage-green);
+            box-shadow: 0 0 0 3px rgba(124, 152, 133, 0.1);
+        }
+        
+        .suggestion-card {
+            background: linear-gradient(135deg, rgba(124, 152, 133, 0.05), rgba(168, 218, 220, 0.05));
+            border: 1px solid rgba(124, 152, 133, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .suggestion-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .source-card {
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--soft-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .source-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .citation-format {
+            background: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .thesis-builder {
+            background: linear-gradient(135deg, rgba(232, 168, 124, 0.1), rgba(168, 218, 220, 0.1));
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .step-indicator {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--sage-green);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .step-indicator.active {
+            background: var(--warm-orange);
+            animation: pulse 2s infinite;
+        }
+        
+        .step-indicator.completed {
+            background: #10B981;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .writing-quality-score {
+            background: conic-gradient(from 0deg, #EF4444 0deg, #F59E0B 72deg, #10B981 144deg, #10B981 360deg);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .writing-quality-score::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .writing-quality-score span {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--charcoal-gray);
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--sage-green);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--sage-green);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .research-query-builder {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .query-step {
+            border-bottom: 1px solid #E5E7EB;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .query-step:last-child {
+            border-bottom: none;
+        }
+        
+        .query-step.active {
+            background: rgba(124, 152, 133, 0.05);
+        }
+        
+        .floating-ai-assistant {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--sage-green), var(--warm-orange));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+        
+        .floating-ai-assistant:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            space-x: 1px;
+        }
+        
+        .typing-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--sage-green);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">AI</span>
+                        </div>
+                        <span class="text-xl font-bold text-charcoal-gray">ASCA</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="nav-link text-gray-600">Dashboard</a>
+                        <a href="assignments.html" class="nav-link text-gray-600">Assignments</a>
+                        <a href="research.html" class="nav-link text-charcoal-gray font-medium">Research</a>
+                        <a href="study-groups.html" class="nav-link text-gray-600">Study Groups</a>
+                        <a href="transfer.html" class="nav-link text-gray-600">Transfer</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-charcoal-gray">
+                        🔍 <span id="source-count">23</span> Sources Found
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-warm-orange to-sage-green rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="bg-gradient-to-r from-green-50 to-teal-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-charcoal-gray mb-4">Research & Writing Coach</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Your AI-powered academic writing assistant that helps find sources, develop thesis statements, 
+                    and provides real-time feedback to improve your writing quality.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Research Query Builder -->
+            <div class="lg:col-span-1">
+                <div class="research-query-builder">
+                    <div class="p-6 border-b border-gray-200">
+                        <h2 class="text-xl font-bold text-charcoal-gray">Research Query Builder</h2>
+                        <p class="text-sm text-gray-600 mt-1">Step-by-step thesis development</p>
+                    </div>
+                    
+                    <div class="query-step" id="step-1">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="step-indicator active">1</div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Topic Selection</h3>
+                                <p class="text-xs text-gray-500">Choose your research area</p>
+                            </div>
+                        </div>
+                        <div class="ml-11">
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option>Select a topic...</option>
+                                <option>Climate Change</option>
+                                <option>Artificial Intelligence</option>
+                                <option>Social Media Impact</option>
+                                <option>Renewable Energy</option>
+                                <option>Mental Health</option>
+                                <option>Education Technology</option>
+                            </select>
+                            <button onclick="nextStep(2)" class="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                Next Step
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="query-step" id="step-2">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="step-indicator">2</div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Research Question</h3>
+                                <p class="text-xs text-gray-500">Define your inquiry</p>
+                            </div>
+                        </div>
+                        <div class="ml-11">
+                            <input type="text" placeholder="e.g., How does social media affect student productivity?" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <button onclick="nextStep(3)" class="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                Next Step
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="query-step" id="step-3">
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="step-indicator">3</div>
+                            <div>
+                                <h3 class="font-semibold text-charcoal-gray">Thesis Development</h3>
+                                <p class="text-xs text-gray-500">Craft your main argument</p>
+                            </div>
+                        </div>
+                        <div class="ml-11">
+                            <textarea rows="3" placeholder="Your thesis statement..." 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"></textarea>
+                            <button onclick="generateResearchPlan()" class="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                Generate Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Writing Quality Score -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mt-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">Writing Quality Score</h3>
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="writing-quality-score">
+                            <span id="quality-score">85</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Clarity</span>
+                            <span class="text-green-600 font-medium">92%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Grammar</span>
+                            <span class="text-green-600 font-medium">88%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Structure</span>
+                            <span class="text-yellow-600 font-medium">76%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Citation</span>
+                            <span class="text-red-600 font-medium">65%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center Column: Writing Workspace -->
+            <div class="lg:col-span-1">
+                <div class="research-workspace">
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-bold text-charcoal-gray">Writing Workspace</h2>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="saveDocument()" class="text-sm bg-sage-green text-white px-3 py-1 rounded-lg hover:bg-opacity-90 transition-colors">
+                                    Save
+                                </button>
+                                <button onclick="exportDocument()" class="text-sm bg-gray-200 text-charcoal-gray px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
+                                    Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <input type="text" placeholder="Document Title..." 
+                                   class="w-full text-2xl font-bold text-charcoal-gray border-none outline-none bg-transparent placeholder-gray-400">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <textarea id="writing-editor" class="writing-editor w-full" 
+                                      placeholder="Start writing your paper here... The AI will provide real-time feedback and suggestions as you type."></textarea>
+                        </div>
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-500">
+                            <div>
+                                <span id="word-count">0</span> words • 
+                                <span id="reading-time">0</span> min read
+                            </div>
+                            <div class="typing-indicator" id="ai-typing" style="display: none;">
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="typing-dot"></span>
+                                <span class="ml-2 text-xs">AI analyzing...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Sources & Suggestions -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- AI Writing Suggestions -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">✨ AI Writing Suggestions</h3>
+                    <div id="suggestions-container">
+                        <div class="suggestion-card">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-blue-500 text-lg">📝</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Improve Clarity</h4>
+                                    <p class="text-xs text-gray-600">Consider rephrasing this sentence for better clarity and impact.</p>
+                                    <button onclick="applySuggestion('clarity')" class="text-xs text-blue-600 hover:text-blue-700 mt-1">
+                                        Apply Suggestion
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="suggestion-card">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-green-500 text-lg">🔗</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Add Citation</h4>
+                                    <p class="text-xs text-gray-600">This claim would be strengthened with a supporting academic source.</p>
+                                    <button onclick="findSources()" class="text-xs text-green-600 hover:text-green-700 mt-1">
+                                        Find Sources
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="suggestion-card">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-purple-500 text-lg">📊</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Add Data</h4>
+                                    <p class="text-xs text-gray-600">Consider including statistics or research data to support your argument.</p>
+                                    <button onclick="suggestData()" class="text-xs text-purple-600 hover:text-purple-700 mt-1">
+                                        Suggest Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Academic Sources -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold text-charcoal-gray">📚 Academic Sources</h3>
+                        <button onclick="searchSources()" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
+                            Search
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-3" id="sources-container">
+                        <div class="source-card p-4">
+                            <h4 class="font-medium text-sm mb-2">The Impact of Social Media on Student Academic Performance</h4>
+                            <p class="text-xs text-gray-600 mb-2">Johnson, M. et al. (2024) • Journal of Educational Technology</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-green-600">✓ Peer Reviewed</div>
+                                <button onclick="citeSource('johnson-2024')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                                    Cite
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="source-card p-4">
+                            <h4 class="font-medium text-sm mb-2">Digital Distraction and Learning Outcomes in Higher Education</h4>
+                            <p class="text-xs text-gray-600 mb-2">Smith, A. & Brown, K. (2024) • Educational Psychology Review</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-green-600">✓ Peer Reviewed</div>
+                                <button onclick="citeSource('smith-2024')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                                    Cite
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="source-card p-4">
+                            <h4 class="font-medium text-sm mb-2">Social Networking and Academic Achievement: A Meta-Analysis</h4>
+                            <p class="text-xs text-gray-600 mb-2">Davis, R. et al. (2023) • Computers & Education</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-green-600">✓ Peer Reviewed</div>
+                                <button onclick="citeSource('davis-2023')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                                    Cite
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Citation Manager -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">🔗 Bibliography</h3>
+                    <div class="space-y-3" id="bibliography-container">
+                        <div class="citation-format">
+                            Johnson, M., Smith, A., & Davis, R. (2024). The Impact of Social Media on Student Academic Performance. <em>Journal of Educational Technology</em>, 15(3), 234-251.
+                        </div>
+                        <div class="citation-format">
+                            Smith, A., & Brown, K. (2024). Digital Distraction and Learning Outcomes in Higher Education. <em>Educational Psychology Review</em>, 28(2), 145-168.
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="flex space-x-2">
+                            <select class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option>APA</option>
+                                <option>MLA</option>
+                                <option>Chicago</option>
+                                <option>IEEE</option>
+                            </select>
+                            <button onclick="exportBibliography()" class="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
+                                Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating AI Assistant -->
+    <div class="floating-ai-assistant" onclick="toggleAIChat()">
+        🤖
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal-gray text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">AI</span>
+                    </div>
+                    <span class="text-2xl font-bold">EduAgents</span>
+                </div>
+                <p class="text-white/80 mb-6">Empowering academic success through collaborative AI intelligence</p>
+                <div class="flex justify-center space-x-6 text-sm text-white/60">
+                    <span>© 2025 Adaptive Student Coaching Agents</span>
+                    <span>•</span>
+                    <span>Built with Multi-Agent Collaboration</span>
+                    <span>•</span>
+                    <span>Powered by Gemini LLM</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Research and writing functionality
+        let currentStep = 1;
+        let writingScore = 85;
+        let wordCount = 0;
+        let aiSuggestions = [];
+        let sources = [
+            {
+                id: 'johnson-2024',
+                title: 'The Impact of Social Media on Student Academic Performance',
+                authors: 'Johnson, M. et al.',
+                year: '2024',
+                journal: 'Journal of Educational Technology',
+                pages: '234-251'
+            },
+            {
+                id: 'smith-2024',
+                title: 'Digital Distraction and Learning Outcomes in Higher Education',
+                authors: 'Smith, A. & Brown, K.',
+                year: '2024',
+                journal: 'Educational Psychology Review',
+                pages: '145-168'
+            },
+            {
+                id: 'davis-2023',
+                title: 'Social Networking and Academic Achievement: A Meta-Analysis',
+                authors: 'Davis, R. et al.',
+                year: '2023',
+                journal: 'Computers & Education',
+                pages: 'N/A'
+            }
+        ];
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWritingEditor();
+            animateElements();
+            simulateAIActivity();
+        });
+
+        // Initialize writing editor with real-time feedback
+        function initializeWritingEditor() {
+            const editor = document.getElementById('writing-editor');
+            let typingTimer;
+            
+            editor.addEventListener('input', function() {
+                clearTimeout(typingTimer);
+                
+                // Update word count and reading time
+                updateWritingStats();
+                
+                // Show AI typing indicator
+                document.getElementById('ai-typing').style.display = 'inline-flex';
+                
+                // Simulate AI analysis after user stops typing
+                typingTimer = setTimeout(() => {
+                    analyzeWriting();
+                    document.getElementById('ai-typing').style.display = 'none';
+                }, 1500);
+            });
+        }
+
+        // Update writing statistics
+        function updateWritingStats() {
+            const editor = document.getElementById('writing-editor');
+            const text = editor.value;
+            
+            wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const readingTime = Math.ceil(wordCount / 200); // Average reading speed
+            
+            document.getElementById('word-count').textContent = wordCount;
+            document.getElementById('reading-time').textContent = readingTime;
+        }
+
+        // Analyze writing and provide feedback
+        function analyzeWriting() {
+            const editor = document.getElementById('writing-editor');
+            const text = editor.value;
+            
+            if (text.length < 50) return;
+            
+            // Simulate AI analysis
+            const suggestions = [
+                {
+                    type: 'clarity',
+                    icon: '📝',
+                    title: 'Improve Clarity',
+                    message: 'Consider rephrasing this sentence for better clarity and impact.',
+                    color: 'blue'
+                },
+                {
+                    type: 'citation',
+                    icon: '🔗',
+                    title: 'Add Citation',
+                    message: 'This claim would be strengthened with a supporting academic source.',
+                    color: 'green'
+                },
+                {
+                    type: 'structure',
+                    icon: '📊',
+                    title: 'Improve Structure',
+                    message: 'Consider adding a transition sentence to improve flow between paragraphs.',
+                    color: 'purple'
+                }
+            ];
+            
+            // Randomly select suggestions based on writing quality
+            const randomSuggestions = suggestions.slice(0, Math.floor(Math.random() * 3) + 1);
+            
+            updateSuggestions(randomSuggestions);
+            updateWritingScore();
+        }
+
+        // Update AI suggestions panel
+        function updateSuggestions(suggestions) {
+            const container = document.getElementById('suggestions-container');
+            container.innerHTML = '';
+            
+            suggestions.forEach((suggestion, index) => {
+                const suggestionCard = document.createElement('div');
+                suggestionCard.className = 'suggestion-card';
+                suggestionCard.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="text-${suggestion.color}-500 text-lg">${suggestion.icon}</div>
+                        <div>
+                            <h4 class="font-medium text-sm mb-1">${suggestion.title}</h4>
+                            <p class="text-xs text-gray-600">${suggestion.message}</p>
+                            <button onclick="applySuggestion('${suggestion.type}')" class="text-xs text-${suggestion.color}-600 hover:text-${suggestion.color}-700 mt-1">
+                                Apply Suggestion
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(suggestionCard);
+                
+                // Animate suggestion appearance
+                anime({
+                    targets: suggestionCard,
+                    translateX: [-300, 0],
+                    opacity: [0, 1],
+                    duration: 500,
+                    delay: index * 200,
+                    easing: 'easeOutQuart'
+                });
+            });
+        }
+
+        // Update writing quality score
+        function updateWritingScore() {
+            const baseScore = 85;
+            const wordCountBonus = Math.min(wordCount / 10, 10);
+            const randomVariation = Math.random() * 10 - 5;
+            
+            writingScore = Math.min(100, Math.max(0, baseScore + wordCountBonus + randomVariation));
+            
+            document.getElementById('quality-score').textContent = Math.round(writingScore);
+            
+            // Update progress ring color based on score
+            const scoreElement = document.querySelector('.writing-quality-score');
+            if (writingScore >= 80) {
+                scoreElement.style.background = 'conic-gradient(from 0deg, #10B981 0deg, #10B981 360deg)';
+            } else if (writingScore >= 60) {
+                scoreElement.style.background = 'conic-gradient(from 0deg, #F59E0B 0deg, #F59E0B 360deg)';
+            } else {
+                scoreElement.style.background = 'conic-gradient(from 0deg, #EF4444 0deg, #EF4444 360deg)';
+            }
+        }
+
+        // Research query builder functions
+        function nextStep(step) {
+            // Mark current step as completed
+            const currentStepElement = document.getElementById(`step-${currentStep}`);
+            const stepIndicator = currentStepElement.querySelector('.step-indicator');
+            stepIndicator.classList.remove('active');
+            stepIndicator.classList.add('completed');
+            currentStepElement.classList.remove('active');
+            
+            // Activate next step
+            currentStep = step;
+            const nextStepElement = document.getElementById(`step-${step}`);
+            const nextIndicator = nextStepElement.querySelector('.step-indicator');
+            nextIndicator.classList.add('active');
+            nextStepElement.classList.add('active');
+            
+            // Animate step transition
+            anime({
+                targets: nextStepElement,
+                opacity: [0, 1],
+                translateY: [20, 0],
+                duration: 500,
+                easing: 'easeOutQuart'
+            });
+        }
+
+        function generateResearchPlan() {
+            showNotification('🔍 Generating comprehensive research plan...', 'info');
+            
+            setTimeout(() => {
+                showNotification('✅ Research plan generated! Check your sources.', 'success');
+                
+                // Add new sources based on research
+                const newSources = [
+                    {
+                        id: 'new-source-1',
+                        title: 'Digital Wellness in Academic Environments',
+                        authors: 'Miller, S. et al.',
+                        year: '2024',
+                        journal: 'Academic Research Quarterly',
+                        pages: '78-95'
+                    }
+                ];
+                
+                sources = sources.concat(newSources);
+                updateSourcesList();
+                
+                // Update research query builder with completion
+                const step3 = document.getElementById('step-3');
+                const indicator = step3.querySelector('.step-indicator');
+                indicator.classList.remove('active');
+                indicator.classList.add('completed');
+                
+                // Add completion message
+                const completionMsg = document.createElement('div');
+                completionMsg.className = 'ml-11 mt-3 p-3 bg-green-50 border border-green-200 rounded-lg';
+                completionMsg.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="text-green-600">✅</div>
+                        <div class="text-sm text-green-800">
+                            <strong>Research Plan Complete!</strong> Found ${sources.length} relevant sources.
+                        </div>
+                    </div>
+                `;
+                step3.appendChild(completionMsg);
+                
+            }, 2000);
+        }
+
+        // Writing suggestion functions
+        function applySuggestion(type) {
+            const editor = document.getElementById('writing-editor');
+            
+            switch(type) {
+                case 'clarity':
+                    showNotification('📝 Suggestion applied! Your sentence is now clearer.', 'success');
+                    break;
+                case 'citation':
+                    showNotification('🔗 Citation placeholder added. Use the sources panel to cite properly.', 'success');
+                    editor.value += ' [CITATION NEEDED]';
+                    break;
+                case 'structure':
+                    showNotification('📊 Transition sentence added to improve flow.', 'success');
+                    break;
+            }
+            
+            updateWritingStats();
+            updateWritingScore();
+        }
+
+        function findSources() {
+            showNotification('🔍 Searching for relevant academic sources...', 'info');
+            
+            setTimeout(() => {
+                showNotification('📚 Found 5 additional sources! Check the sources panel.', 'success');
+                
+                const newSources = [
+                    {
+                        id: 'found-source-1',
+                        title: 'The Psychology of Digital Distraction',
+                        authors: 'Williams, P. & Jones, L.',
+                        year: '2024',
+                        journal: 'Psychology Today',
+                        pages: '45-62'
+                    },
+                    {
+                        id: 'found-source-2',
+                        title: 'Social Media Usage Patterns Among College Students',
+                        authors: 'Garcia, M.',
+                        year: '2023',
+                        journal: 'Student Life Research',
+                        pages: '12-28'
+                    }
+                ];
+                
+                sources = sources.concat(newSources);
+                updateSourcesList();
+            }, 1500);
+        }
+
+        function suggestData() {
+            showNotification('📊 Researching relevant statistics and data...', 'info');
+            
+            setTimeout(() => {
+                const modal = createModal('Suggested Data & Statistics', `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 class="font-medium text-sm text-blue-800 mb-2">Key Statistic</h4>
+                            <p class="text-sm text-blue-700">"67% of students report that social media negatively impacts their study focus" (Johnson et al., 2024)</p>
+                            <button onclick="insertData('67% of students report that social media negatively impacts their study focus (Johnson et al., 2024)')" class="text-xs bg-blue-600 text-white px-2 py-1 rounded mt-2 hover:bg-blue-700 transition-colors">
+                                Insert
+                            </button>
+                        </div>
+                        
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h4 class="font-medium text-sm text-green-800 mb-2">Research Finding</h4>
+                            <p class="text-sm text-green-700">"Students who limit social media use to 30 minutes daily show 23% better academic performance" (Smith & Brown, 2024)</p>
+                            <button onclick="insertData('Students who limit social media use to 30 minutes daily show 23% better academic performance (Smith & Brown, 2024)')" class="text-xs bg-green-600 text-white px-2 py-1 rounded mt-2 hover:bg-green-700 transition-colors">
+                                Insert
+                            </button>
+                        </div>
+                        
+                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h4 class="font-medium text-sm text-purple-800 mb-2">Trend Data</h4>
+                            <p class="text-sm text-purple-700">"Social media usage among college students increased by 45% between 2020-2024" (Davis et al., 2023)</p>
+                            <button onclick="insertData('Social media usage among college students increased by 45% between 2020-2024 (Davis et al., 2023)')" class="text-xs bg-purple-600 text-white px-2 py-1 rounded mt-2 hover:bg-purple-700 transition-colors">
+                                Insert
+                            </button>
+                        </div>
+                    </div>
+                `);
+                document.body.appendChild(modal);
+            }, 1000);
+        }
+
+        function insertData(data) {
+            const editor = document.getElementById('writing-editor');
+            const cursorPos = editor.selectionStart;
+            const textBefore = editor.value.substring(0, cursorPos);
+            const textAfter = editor.value.substring(cursorPos);
+            
+            editor.value = textBefore + data + textAfter;
+            editor.focus();
+            editor.setSelectionRange(cursorPos + data.length, cursorPos + data.length);
+            
+            updateWritingStats();
+            showNotification('📊 Data inserted successfully!', 'success');
+            closeModal();
+        }
+
+        // Source management functions
+        function searchSources() {
+            showNotification('🔍 Searching academic databases...', 'info');
+            
+            setTimeout(() => {
+                showNotification('📚 Found 12 new sources! Updating your bibliography.', 'success');
+                
+                const newSources = [
+                    {
+                        id: 'search-source-1',
+                        title: 'Digital Natives and Academic Performance',
+                        authors: 'Thompson, K.',
+                        year: '2024',
+                        journal: 'Educational Technology Research',
+                        pages: '112-130'
+                    },
+                    {
+                        id: 'search-source-2',
+                        title: 'Social Media Addiction Among University Students',
+                        authors: 'Lee, S. & Park, J.',
+                        year: '2023',
+                        journal: 'Journal of Behavioral Studies',
+                        pages: '45-67'
+                    }
+                ];
+                
+                sources = sources.concat(newSources);
+                updateSourcesList();
+                updateBibliography();
+            }, 2000);
+        }
+
+        function citeSource(sourceId) {
+            const source = sources.find(s => s.id === sourceId);
+            if (source) {
+                const citation = `${source.authors} (${source.year}). ${source.title}. <em>${source.journal}</em>, ${source.pages}.`;
+                
+                const editor = document.getElementById('writing-editor');
+                const cursorPos = editor.selectionStart;
+                const textBefore = editor.value.substring(0, cursorPos);
+                const textAfter = editor.value.substring(cursorPos);
+                
+                editor.value = textBefore + ` (${source.authors}, ${source.year})` + textAfter;
+                editor.focus();
+                editor.setSelectionRange(cursorPos + citation.length + 3, cursorPos + citation.length + 3);
+                
+                showNotification(`✅ Citation added: ${source.authors}, ${source.year}`, 'success');
+                updateBibliography();
+            }
+        }
+
+        function updateSourcesList() {
+            const container = document.getElementById('sources-container');
+            container.innerHTML = '';
+            
+            sources.slice(0, 5).forEach((source, index) => {
+                const sourceCard = document.createElement('div');
+                sourceCard.className = 'source-card p-4';
+                sourceCard.innerHTML = `
+                    <h4 class="font-medium text-sm mb-2">${source.title}</h4>
+                    <p class="text-xs text-gray-600 mb-2">${source.authors} (${source.year}) • ${source.journal}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs text-green-600">✓ Peer Reviewed</div>
+                        <button onclick="citeSource('${source.id}')" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                            Cite
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(sourceCard);
+                
+                // Animate source appearance
+                anime({
+                    targets: sourceCard,
+                    translateY: [20, 0],
+                    opacity: [0, 1],
+                    duration: 500,
+                    delay: index * 100,
+                    easing: 'easeOutQuart'
+                });
+            });
+        }
+
+        function updateBibliography() {
+            const container = document.getElementById('bibliography-container');
+            container.innerHTML = '';
+            
+            sources.forEach(source => {
+                const citation = document.createElement('div');
+                citation.className = 'citation-format';
+                citation.textContent = `${source.authors} (${source.year}). ${source.title}. <em>${source.journal}</em>, ${source.pages}.`;
+                container.appendChild(citation);
+            });
+        }
+
+        function exportBibliography() {
+            showNotification('📄 Bibliography exported in selected format!', 'success');
+        }
+
+        // Document functions
+        function saveDocument() {
+            showNotification('💾 Document saved successfully!', 'success');
+        }
+
+        function exportDocument() {
+            showNotification('📄 Document exported as PDF!', 'success');
+        }
+
+        // AI Assistant functions
+        function toggleAIChat() {
+            const modal = createModal('AI Writing Assistant', `
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-sage-green to-soft-blue p-4 rounded-lg text-white">
+                        <h3 class="font-semibold mb-2">🤖 How can I help you write?</h3>
+                        <p class="text-sm opacity-90">I'm here to assist with research, writing feedback, and academic support.</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <button onclick="aiHelp('outline')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">📝 Create Outline</div>
+                            <div class="text-xs text-gray-600">Generate a structured outline for your paper</div>
+                        </button>
+                        
+                        <button onclick="aiHelp('feedback')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">💬 Get Feedback</div>
+                            <div class="text-xs text-gray-600">Receive detailed writing feedback and suggestions</div>
+                        </button>
+                        
+                        <button onclick="aiHelp('sources')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">📚 Find Sources</div>
+                            <div class="text-xs text-gray-600">Discover relevant academic sources</div>
+                        </button>
+                        
+                        <button onclick="aiHelp('citation')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">🔗 Citation Help</div>
+                            <div class="text-xs text-gray-600">Get help with proper citation formatting</div>
+                        </button>
+                    </div>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        function aiHelp(type) {
+            const responses = {
+                outline: '✅ Outline generated! Check the writing workspace for your structured paper framework.',
+                feedback: '📝 Analyzing your writing... Detailed feedback will appear in the suggestions panel.',
+                sources: '🔍 Searching academic databases... New sources will be added to your bibliography.',
+                citation: '🔗 Citation guide opened! Check the help section for formatting examples.'
+            };
+            
+            showNotification(responses[type], 'info');
+            closeModal();
+            
+            // Simulate AI response
+            setTimeout(() => {
+                if (type === 'feedback') {
+                    analyzeWriting();
+                } else if (type === 'sources') {
+                    searchSources();
+                }
+            }, 1500);
+        }
+
+        // Utility functions
+        function animateElements() {
+            anime({
+                targets: '.research-workspace, .research-query-builder, .source-card, .suggestion-card',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuart'
+            });
+        }
+
+        function simulateAIActivity() {
+            // Simulate periodic AI suggestions
+            setInterval(() => {
+                if (Math.random() > 0.7 && wordCount > 50) {
+                    analyzeWriting();
+                }
+            }, 30000);
+        }
+
+        function createModal(title, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-charcoal-gray">${title}</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+            return modal;
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                anime({
+                    targets: modal,
+                    opacity: [1, 0],
+                    duration: 200,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        modal.remove();
+                    }
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                duration: 500,
+                easing: 'easeOutQuart'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    duration: 300,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        notification.remove();
+                    }
+                });
+            }, 4000);
+        }
+
+        // Global function exports
+        window.nextStep = nextStep;
+        window.generateResearchPlan = generateResearchPlan;
+        window.applySuggestion = applySuggestion;
+        window.findSources = findSources;
+        window.suggestData = suggestData;
+        window.searchSources = searchSources;
+        window.citeSource = citeSource;
+        window.exportBibliography = exportBibliography;
+        window.saveDocument = saveDocument;
+        window.exportDocument = exportDocument;
+        window.toggleAIChat = toggleAIChat;
+        window.aiHelp = aiHelp;
+        window.insertData = insertData;
+        window.closeModal = closeModal;
+    </script>
+</body>
+</html>

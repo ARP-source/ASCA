@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellness & Focus Agent - ASCA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage-green: #7C9885;
+            --warm-orange: #E8A87C;
+            --soft-blue: #A8DADC;
+            --cream-white: #F1FAEE;
+            --charcoal-gray: #457B9D;
+            --light-gray: #E9ECEF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--cream-white) 0%, #E8F4F8 100%);
+            min-height: 100vh;
+        }
+        
+        .wellness-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .wellness-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .mood-selector {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        
+        .mood-option {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .mood-option:hover {
+            border-color: var(--sage-green);
+            background: rgba(124, 152, 133, 0.05);
+        }
+        
+        .mood-option.selected {
+            border-color: var(--sage-green);
+            background: rgba(124, 152, 133, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .stress-meter {
+            background: linear-gradient(90deg, #10B981 0%, #F59E0B 50%, #EF4444 100%);
+            height: 8px;
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        .stress-indicator {
+            position: absolute;
+            top: -4px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid var(--charcoal-gray);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            transition: left 0.3s ease;
+        }
+        
+        .breathing-exercise {
+            background: linear-gradient(135deg, rgba(168, 218, 220, 0.2), rgba(124, 152, 133, 0.2));
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .breathing-circle {
+            width: 120px;
+            height: 120px;
+            border: 3px solid var(--soft-blue);
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 4s ease-in-out;
+        }
+        
+        .breathing-circle.inhale {
+            transform: scale(1.3);
+            border-color: var(--sage-green);
+        }
+        
+        .breathing-circle.exhale {
+            transform: scale(0.8);
+            border-color: var(--warm-orange);
+        }
+        
+        .focus-timer {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .timer-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--charcoal-gray);
+            margin: 20px 0;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            space-x: 3;
+        }
+        
+        .wellness-insight {
+            background: linear-gradient(135deg, rgba(232, 168, 124, 0.1), rgba(168, 218, 220, 0.1));
+            border: 1px solid rgba(124, 152, 133, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+        
+        .habit-tracker {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .habit-item {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .habit-item:last-child {
+            border-bottom: none;
+        }
+        
+        .habit-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #E5E7EB;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .habit-checkbox.checked {
+            background: var(--sage-green);
+            border-color: var(--sage-green);
+        }
+        
+        .habit-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--sage-green);
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--sage-green);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        .floating-wellness-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--sage-green), var(--soft-blue));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+        
+        .floating-wellness-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+        
+        .wellness-progress-ring {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+        
+        .wellness-progress-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .wellness-progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+        
+        .wellness-progress-ring .bg {
+            stroke: #E5E7EB;
+        }
+        
+        .wellness-progress-ring .progress {
+            stroke: var(--sage-green);
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .mindfulness-quote {
+            background: linear-gradient(135deg, rgba(124, 152, 133, 0.1), rgba(168, 218, 220, 0.1));
+            border-left: 4px solid var(--sage-green);
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--charcoal-gray);
+        }
+        
+        .productivity-tip {
+            background: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .productivity-tip:hover {
+            border-color: var(--warm-orange);
+            background: rgba(232, 168, 124, 0.05);
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">AI</span>
+                        </div>
+                        <span class="text-xl font-bold text-charcoal-gray">ASCA</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="index.html" class="nav-link text-gray-600">Dashboard</a>
+                        <a href="assignments.html" class="nav-link text-gray-600">Assignments</a>
+                        <a href="research.html" class="nav-link text-gray-600">Research</a>
+                        <a href="study-groups.html" class="nav-link text-gray-600">Study Groups</a>
+                        <a href="transfer.html" class="nav-link text-gray-600">Transfer</a>
+                        <a href="wellness.html" class="nav-link text-charcoal-gray font-medium">Wellness</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-sm text-charcoal-gray">
+                        🧘 Wellness Score: <span id="wellness-score">92</span>
+                    </div>
+                    <div class="w-8 h-8 bg-gradient-to-br from-warm-orange to-sage-green rounded-full"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="bg-gradient-to-r from-teal-50 to-cyan-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-charcoal-gray mb-4">Wellness & Focus Agent</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Maintain balance and optimize your mental well-being for academic success. 
+                    Get personalized wellness insights, practice mindfulness, and track healthy habits.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Daily Check-in & Mood Tracking -->
+            <div class="space-y-6">
+                
+                <!-- Daily Wellness Check-in -->
+                <div class="wellness-card p-6">
+                    <h2 class="text-xl font-bold text-charcoal-gray mb-4">🌅 Daily Check-in</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">How are you feeling today?</label>
+                            <div class="mood-selector">
+                                <div class="mood-option" data-mood="stressed" onclick="selectMood('stressed')">
+                                    <div class="text-2xl mb-1">😰</div>
+                                    <div class="text-xs">Stressed</div>
+                                </div>
+                                <div class="mood-option" data-mood="tired" onclick="selectMood('tired')">
+                                    <div class="text-2xl mb-1">😴</div>
+                                    <div class="text-xs">Tired</div>
+                                </div>
+                                <div class="mood-option selected" data-mood="focused" onclick="selectMood('focused')">
+                                    <div class="text-2xl mb-1">🧠</div>
+                                    <div class="text-xs">Focused</div>
+                                </div>
+                                <div class="mood-option" data-mood="happy" onclick="selectMood('happy')">
+                                    <div class="text-2xl mb-1">😊</div>
+                                    <div class="text-xs">Happy</div>
+                                </div>
+                                <div class="mood-option" data-mood="excited" onclick="selectMood('excited')">
+                                    <div class="text-2xl mb-1">🚀</div>
+                                    <div class="text-xs">Excited</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Stress Level</label>
+                            <div class="stress-meter">
+                                <div class="stress-indicator" id="stress-indicator" style="left: 30%;"></div>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Low</span>
+                                <span>Medium</span>
+                                <span>High</span>
+                            </div>
+                            <input type="range" min="1" max="10" value="3" class="w-full mt-2" id="stress-slider" onchange="updateStressLevel(this.value)">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sleep Quality (Last Night)</label>
+                            <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                                <option>Excellent (8+ hours)</option>
+                                <option>Good (7-8 hours)</option>
+                                <option selected>Fair (6-7 hours)</option>
+                                <option>Poor (5-6 hours)</option>
+                                <option>Very Poor (< 5 hours)</option>
+                            </select>
+                        </div>
+                        
+                        <button onclick="submitWellnessCheck()" class="w-full bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 transition-colors">
+                            Submit Check-in
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Wellness Progress -->
+                <div class="wellness-card p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📈 Wellness Progress</h3>
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="wellness-progress-ring">
+                            <svg width="80" height="80">
+                                <circle class="bg" cx="40" cy="40" r="36"></circle>
+                                <circle class="progress" cx="40" cy="40" r="36" id="wellness-progress-circle"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span class="text-lg font-bold text-charcoal-gray" id="wellness-percentage">92%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Sleep Quality</span>
+                            <span class="font-semibold text-green-600">85%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Stress Management</span>
+                            <span class="font-semibold text-yellow-600">78%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Study-Life Balance</span>
+                            <span class="font-semibold text-green-600">92%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Mindfulness Practice</span>
+                            <span class="font-semibold text-blue-600">88%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mindfulness Quote -->
+                <div class="mindfulness-quote">
+                    <p class="text-sm mb-2">"The secret of getting ahead is getting started. The secret of getting started is breaking your complex overwhelming tasks into small manageable tasks, and starting on the first one."</p>
+                    <p class="text-xs text-gray-600">— Mark Twain</p>
+                </div>
+            </div>
+            
+            <!-- Center Column: Focus Tools & Breathing -->
+            <div class="space-y-6">
+                
+                <!-- Focus Timer -->
+                <div class="focus-timer">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">⏱️ Focus Timer</h3>
+                    <div class="timer-display" id="timer-display">25:00</div>
+                    <div class="timer-controls flex justify-center space-x-3">
+                        <button onclick="startTimer()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" id="start-btn">
+                            Start
+                        </button>
+                        <button onclick="pauseTimer()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors" id="pause-btn" disabled>
+                            Pause
+                        </button>
+                        <button onclick="resetTimer()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            Reset
+                        </button>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="text-sm text-gray-600 mb-2">Session Type:</div>
+                        <div class="flex space-x-2">
+                            <button onclick="setTimer(25)" class="px-3 py-1 bg-sage-green text-white rounded text-sm hover:bg-opacity-90 transition-colors">
+                                Focus (25 min)
+                            </button>
+                            <button onclick="setTimer(5)" class="px-3 py-1 bg-gray-200 text-charcoal-gray rounded text-sm hover:bg-gray-300 transition-colors">
+                                Short Break (5 min)
+                            </button>
+                            <button onclick="setTimer(15)" class="px-3 py-1 bg-gray-200 text-charcoal-gray rounded text-sm hover:bg-gray-300 transition-colors">
+                                Long Break (15 min)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Breathing Exercise -->
+                <div class="breathing-exercise">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">🫁 Breathing Exercise</h3>
+                    <div class="breathing-circle" id="breathing-circle">
+                        <div class="text-sm font-medium text-charcoal-gray">Breathe</div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="text-sm text-charcoal-gray mb-2" id="breathing-instruction">Click start to begin breathing exercise</div>
+                        <button onclick="startBreathing()" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors" id="breathing-btn">
+                            Start Breathing
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Study Break Suggestions -->
+                <div class="wellness-card p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">☕ Study Break Ideas</h3>
+                    <div class="space-y-3">
+                        <div class="productivity-tip" onclick="takeBreak('walk')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">🚶</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Take a 10-minute walk</h4>
+                                    <p class="text-xs text-gray-600">Boost circulation and clear your mind</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="productivity-tip" onclick="takeBreak('stretch')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">🧘</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Do some stretches</h4>
+                                    <p class="text-xs text-gray-600">Relieve tension and improve posture</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="productivity-tip" onclick="takeBreak('hydrate')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">💧</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Drink water</h4>
+                                    <p class="text-xs text-gray-600">Stay hydrated for better focus</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="productivity-tip" onclick="takeBreak('music')">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-2xl">🎵</div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Listen to calming music</h4>
+                                    <p class="text-xs text-gray-600">Reduce stress and improve mood</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Habit Tracking & Analytics -->
+            <div class="space-y-6">
+                
+                <!-- Daily Habits -->
+                <div class="habit-tracker p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">✅ Daily Habits</h3>
+                    <div class="space-y-3">
+                        <div class="habit-item">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <div class="habit-checkbox checked" onclick="toggleHabit(this)"></div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Drink 8 glasses of water</h4>
+                                    <p class="text-xs text-gray-600">Stay hydrated throughout the day</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-green-600 font-medium">7-day streak!</div>
+                        </div>
+                        
+                        <div class="habit-item">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <div class="habit-checkbox" onclick="toggleHabit(this)"></div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Take regular breaks</h4>
+                                    <p class="text-xs text-gray-600">5-minute break every hour</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500">3-day streak</div>
+                        </div>
+                        
+                        <div class="habit-item">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <div class="habit-checkbox checked" onclick="toggleHabit(this)"></div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Practice mindfulness</h4>
+                                    <p class="text-xs text-gray-600">10 minutes of meditation</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-green-600 font-medium">12-day streak!</div>
+                        </div>
+                        
+                        <div class="habit-item">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <div class="habit-checkbox" onclick="toggleHabit(this)"></div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Get 7+ hours of sleep</h4>
+                                    <p class="text-xs text-gray-600">Maintain consistent sleep schedule</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500">1-day streak</div>
+                        </div>
+                        
+                        <div class="habit-item">
+                            <div class="flex items-center space-x-3 flex-1">
+                                <div class="habit-checkbox checked" onclick="toggleHabit(this)"></div>
+                                <div>
+                                    <h4 class="font-medium text-sm">Exercise for 30 minutes</h4>
+                                    <p class="text-xs text-gray-600">Physical activity boosts mental health</p>
+                                </div>
+                            </div>
+                            <div class="text-xs text-green-600 font-medium">5-day streak!</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Wellness Insights -->
+                <div class="wellness-card p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">💡 AI Wellness Insights</h3>
+                    <div class="space-y-4">
+                        <div class="wellness-insight">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-blue-500 text-lg">📊</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Weekly Pattern Detected</h4>
+                                    <p class="text-xs text-gray-600">Your stress levels are highest on Tuesdays and Wednesdays. Consider scheduling lighter study loads on these days.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="wellness-insight">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-green-500 text-lg">🎯</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Productivity Peak</h4>
+                                    <p class="text-xs text-gray-600">You're most productive between 10 AM - 12 PM. Schedule important tasks during this window.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="wellness-insight">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-purple-500 text-lg">🧘</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Mindfulness Recommendation</h4>
+                                    <p class="text-xs text-gray-600">Your focus improves by 23% after breathing exercises. Try 5 minutes before study sessions.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="wellness-insight">
+                            <div class="flex items-start space-x-3">
+                                <div class="text-orange-500 text-lg">⚡</div>
+                                <div>
+                                    <h4 class="font-medium text-sm mb-1">Break Optimization</h4>
+                                    <p class="text-xs text-gray-600">Taking a 10-minute walk every 2 hours could improve your energy levels by 15%.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Wellness Chart -->
+                <div class="wellness-card p-6">
+                    <h3 class="text-lg font-bold text-charcoal-gray mb-4">📈 Weekly Wellness Trends</h3>
+                    <div id="wellness-chart" style="height: 200px;"></div>
+                    
+                    <div class="mt-4 text-center">
+                        <div class="text-sm text-gray-600 mb-2">This Week's Average</div>
+                        <div class="text-2xl font-bold text-sage-green">8.7/10</div>
+                        <div class="text-xs text-gray-500">+0.3 from last week</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Wellness Button -->
+    <div class="floating-wellness-btn" onclick="openWellnessAssistant()">
+        🧘
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal-gray text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-sage-green to-soft-blue rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold">AI</span>
+                    </div>
+                    <span class="text-2xl font-bold">EduAgents</span>
+                </div>
+                <p class="text-white/80 mb-6">Empowering academic success through collaborative AI intelligence</p>
+                <div class="flex justify-center space-x-6 text-sm text-white/60">
+                    <span>© 2025 Adaptive Student Coaching Agents</span>
+                    <span>•</span>
+                    <span>Built with Multi-Agent Collaboration</span>
+                    <span>•</span>
+                    <span>Powered by Gemini LLM</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Wellness agent functionality
+        let currentMood = 'focused';
+        let stressLevel = 3;
+        let wellnessScore = 92;
+        let timerInterval = null;
+        let timerMinutes = 25;
+        let timerSeconds = 0;
+        let isTimerRunning = false;
+        let breathingInterval = null;
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWellnessChart();
+            updateWellnessProgress();
+            animateElements();
+            
+            // Initialize timer display
+            updateTimerDisplay();
+        });
+
+        // Mood selection
+        function selectMood(mood) {
+            // Remove previous selection
+            document.querySelectorAll('.mood-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selection to clicked mood
+            document.querySelector(`[data-mood="${mood}"]`).classList.add('selected');
+            currentMood = mood;
+            
+            // Update wellness score based on mood
+            updateWellnessScore();
+            showNotification(`😊 Mood updated to ${mood.charAt(0).toUpperCase() + mood.slice(1)}`, 'success');
+        }
+
+        // Update stress level
+        function updateStressLevel(level) {
+            stressLevel = parseInt(level);
+            const indicator = document.getElementById('stress-indicator');
+            const percentage = (stressLevel - 1) / 9 * 100;
+            indicator.style.left = percentage + '%';
+            
+            updateWellnessScore();
+        }
+
+        // Update wellness score based on mood and stress
+        function updateWellnessScore() {
+            let baseScore = 100;
+            
+            // Mood adjustments
+            const moodAdjustments = {
+                stressed: -15,
+                tired: -10,
+                focused: 0,
+                happy: 5,
+                excited: 10
+            };
+            
+            baseScore += moodAdjustments[currentMood] || 0;
+            
+            // Stress adjustment
+            baseScore -= (stressLevel - 1) * 3;
+            
+            // Add some random variation
+            baseScore += Math.random() * 6 - 3;
+            
+            wellnessScore = Math.max(0, Math.min(100, baseScore));
+            
+            document.getElementById('wellness-score').textContent = Math.round(wellnessScore);
+            updateWellnessProgress();
+        }
+
+        // Update wellness progress ring
+        function updateWellnessProgress() {
+            const circle = document.getElementById('wellness-progress-circle');
+            const percentage = wellnessScore / 100;
+            const circumference = 2 * Math.PI * 36;
+            const offset = circumference - (percentage * circumference);
+            
+            circle.style.strokeDashoffset = offset;
+            document.getElementById('wellness-percentage').textContent = Math.round(wellnessScore) + '%';
+        }
+
+        // Submit wellness check-in
+        function submitWellnessCheck() {
+            const sleepQuality = document.querySelector('select').value;
+            
+            showNotification('✅ Wellness check-in submitted! Your insights have been updated.', 'success');
+            
+            // Generate personalized insights based on check-in
+            setTimeout(() => {
+                generatePersonalizedInsights();
+            }, 1000);
+        }
+
+        // Generate personalized insights
+        function generatePersonalizedInsights() {
+            const insights = [
+                {
+                    icon: '📊',
+                    color: 'blue',
+                    title: 'Weekly Pattern Detected',
+                    message: 'Your stress levels are highest on Tuesdays and Wednesdays. Consider scheduling lighter study loads on these days.'
+                },
+                {
+                    icon: '🎯',
+                    color: 'green',
+                    title: 'Productivity Peak',
+                    message: 'You\'re most productive between 10 AM - 12 PM. Schedule important tasks during this window.'
+                },
+                {
+                    icon: '🧘',
+                    color: 'purple',
+                    title: 'Mindfulness Recommendation',
+                    message: 'Your focus improves by 23% after breathing exercises. Try 5 minutes before study sessions.'
+                },
+                {
+                    icon: '⚡',
+                    color: 'orange',
+                    title: 'Break Optimization',
+                    message: 'Taking a 10-minute walk every 2 hours could improve your energy levels by 15%.'
+                }
+            ];
+            
+            // Randomly select 2-3 insights
+            const selectedInsights = insights.sort(() => 0.5 - Math.random()).slice(0, 3);
+            
+            // Update insights panel
+            const container = document.querySelector('.space-y-4');
+            container.innerHTML = '';
+            
+            selectedInsights.forEach((insight, index) => {
+                const insightCard = document.createElement('div');
+                insightCard.className = 'wellness-insight';
+                insightCard.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <div class="text-${insight.color}-500 text-lg">${insight.icon}</div>
+                        <div>
+                            <h4 class="font-medium text-sm mb-1">${insight.title}</h4>
+                            <p class="text-xs text-gray-600">${insight.message}</p>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(insightCard);
+                
+                // Animate insight appearance
+                anime({
+                    targets: insightCard,
+                    translateX: [-300, 0],
+                    opacity: [0, 1],
+                    duration: 500,
+                    delay: index * 200,
+                    easing: 'easeOutQuart'
+                });
+            });
+        }
+
+        // Focus Timer Functions
+        function startTimer() {
+            if (!isTimerRunning) {
+                isTimerRunning = true;
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('pause-btn').disabled = false;
+                
+                timerInterval = setInterval(() => {
+                    if (timerSeconds === 0) {
+                        if (timerMinutes === 0) {
+                            // Timer finished
+                            clearInterval(timerInterval);
+                            isTimerRunning = false;
+                            document.getElementById('start-btn').disabled = false;
+                            document.getElementById('pause-btn').disabled = true;
+                            showNotification('⏰ Focus session completed! Time for a break.', 'success');
+                            return;
+                        }
+                        timerMinutes--;
+                        timerSeconds = 59;
+                    } else {
+                        timerSeconds--;
+                    }
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('pause-btn').disabled = true;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerMinutes = 25;
+            timerSeconds = 0;
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('pause-btn').disabled = true;
+            updateTimerDisplay();
+        }
+
+        function setTimer(minutes) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerMinutes = minutes;
+            timerSeconds = 0;
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('pause-btn').disabled = true;
+            updateTimerDisplay();
+            
+            // Update button styles
+            document.querySelectorAll('.timer-controls button').forEach(btn => {
+                btn.className = 'px-3 py-1 bg-gray-200 text-charcoal-gray rounded text-sm hover:bg-gray-300 transition-colors';
+            });
+            event.target.className = 'px-3 py-1 bg-sage-green text-white rounded text-sm hover:bg-opacity-90 transition-colors';
+        }
+
+        function updateTimerDisplay() {
+            const display = document.getElementById('timer-display');
+            const minutes = timerMinutes.toString().padStart(2, '0');
+            const seconds = timerSeconds.toString().padStart(2, '0');
+            display.textContent = `${minutes}:${seconds}`;
+        }
+
+        // Breathing Exercise Functions
+        function startBreathing() {
+            const circle = document.getElementById('breathing-circle');
+            const instruction = document.getElementById('breathing-instruction');
+            const btn = document.getElementById('breathing-btn');
+            
+            let isInhaling = true;
+            let breathCount = 0;
+            const maxBreaths = 10;
+            
+            btn.textContent = 'Stop';
+            btn.onclick = stopBreathing;
+            
+            function breathe() {
+                if (isInhaling) {
+                    circle.classList.add('inhale');
+                    circle.classList.remove('exhale');
+                    instruction.textContent = 'Breathe in slowly...';
+                } else {
+                    circle.classList.add('exhale');
+                    circle.classList.remove('inhale');
+                    instruction.textContent = 'Breathe out slowly...';
+                }
+                
+                isInhaling = !isInhaling;
+                breathCount++;
+                
+                if (breathCount >= maxBreaths * 2) {
+                    stopBreathing();
+                    return;
+                }
+                
+                breathingInterval = setTimeout(breathe, 4000);
+            }
+            
+            breathe();
+        }
+
+        function stopBreathing() {
+            const circle = document.getElementById('breathing-circle');
+            const instruction = document.getElementById('breathing-instruction');
+            const btn = document.getElementById('breathing-btn');
+            
+            clearTimeout(breathingInterval);
+            
+            circle.classList.remove('inhale', 'exhale');
+            instruction.textContent = 'Click start to begin breathing exercise';
+            btn.textContent = 'Start Breathing';
+            btn.onclick = startBreathing;
+            
+            showNotification('🧘 Breathing exercise completed! How do you feel?', 'success');
+        }
+
+        // Break Functions
+        function takeBreak(type) {
+            const breakMessages = {
+                walk: '🚶 Time for a refreshing walk! Step away from your screen for 10 minutes.',
+                stretch: '🧘 Perfect time for some stretches! Relieve that tension.',
+                hydrate: '💧 Don\'t forget to drink water! Stay hydrated for better focus.',
+                music: '🎵 Put on some calming music and let your mind relax for a few minutes.'
+            };
+            
+            showNotification(breakMessages[type], 'info');
+            
+            // Simulate break timer
+            setTimeout(() => {
+                showNotification('✅ Break time over! Ready to get back to studying?', 'success');
+            }, 60000); // 1 minute break simulation
+        }
+
+        // Habit Functions
+        function toggleHabit(checkbox) {
+            checkbox.classList.toggle('checked');
+            
+            if (checkbox.classList.contains('checked')) {
+                showNotification('✅ Great job! Keep up the good habits.', 'success');
+                updateWellnessScore();
+            } else {
+                showNotification('❌ Habit unchecked. Don\'t worry, tomorrow is a new day!', 'info');
+            }
+        }
+
+        // Initialize wellness chart
+        function initializeWellnessChart() {
+            const chartDom = document.getElementById('wellness-chart');
+            const myChart = echarts.init(chartDom);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    axisLine: { show: false },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 10,
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    splitLine: { 
+                        lineStyle: { color: '#E5E7EB' }
+                    }
+                },
+                series: [{
+                    name: 'Wellness Score',
+                    data: [8.2, 7.8, 8.5, 9.1, 8.7, 9.3, 8.9],
+                    type: 'line',
+                    smooth: true,
+                    lineStyle: {
+                        color: '#7C9885',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#7C9885'
+                    },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [{
+                                offset: 0, color: 'rgba(124, 152, 133, 0.3)'
+                            }, {
+                                offset: 1, color: 'rgba(124, 152, 133, 0.05)'
+                            }]
+                        }
+                    }
+                }],
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                }
+            };
+            
+            myChart.setOption(option);
+        }
+
+        // Wellness Assistant Functions
+        function openWellnessAssistant() {
+            const modal = createModal('Wellness Assistant', `
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-teal-500 to-cyan-500 p-4 rounded-lg text-white">
+                        <h3 class="font-semibold mb-2">🧘 How can I help you today?</h3>
+                        <p class="text-sm opacity-90">I'm here to support your mental well-being and academic success.</p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <button onclick="wellnessHelp('meditation')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">🧘‍♀️ Guided Meditation</div>
+                            <div class="text-xs text-gray-600">Start a mindfulness session</div>
+                        </button>
+                        
+                        <button onclick="wellnessHelp('stress')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">💆 Stress Relief Techniques</div>
+                            <div class="text-xs text-gray-600">Quick stress management tips</div>
+                        </button>
+                        
+                        <button onclick="wellnessHelp('sleep')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">😴 Sleep Optimization</div>
+                            <div class="text-xs text-gray-600">Improve your sleep quality</div>
+                        </button>
+                        
+                        <button onclick="wellnessHelp('focus')" class="w-full p-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                            <div class="font-medium text-sm">🎯 Focus Enhancement</div>
+                            <div class="text-xs text-gray-600">Boost concentration and attention</div>
+                        </button>
+                    </div>
+                </div>
+            `);
+            document.body.appendChild(modal);
+        }
+
+        function wellnessHelp(type) {
+            const responses = {
+                meditation: '🧘 Starting guided meditation session... Find a comfortable position and breathe deeply.',
+                stress: '💆 Here are 5 quick stress relief techniques: deep breathing, progressive muscle relaxation, visualization, aromatherapy, and gentle stretching.',
+                sleep: '😴 For better sleep: maintain consistent bedtime, avoid screens 1 hour before bed, keep bedroom cool and dark, and try relaxation techniques.',
+                focus: '🎯 To enhance focus: use the Pomodoro technique, eliminate distractions, practice mindfulness, stay hydrated, and take regular breaks.'
+            };
+            
+            showNotification(responses[type], 'info');
+            closeModal();
+        }
+
+        // Utility functions
+        function animateElements() {
+            anime({
+                targets: '.wellness-card, .mood-option, .habit-item, .productivity-tip',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuart'
+            });
+        }
+
+        function createModal(title, content) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-charcoal-gray">${title}</h3>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+            return modal;
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                anime({
+                    targets: modal,
+                    opacity: [1, 0],
+                    duration: 200,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        modal.remove();
+                    }
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500',
+                warning: 'bg-yellow-500'
+            };
+            
+            notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                duration: 500,
+                easing: 'easeOutQuart'
+            });
+            
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    duration: 300,
+                    easing: 'easeInQuart',
+                    complete: () => {
+                        notification.remove();
+                    }
+                });
+            }, 4000);
+        }
+
+        // Global function exports
+        window.selectMood = selectMood;
+        window.updateStressLevel = updateStressLevel;
+        window.submitWellnessCheck = submitWellnessCheck;
+        window.startTimer = startTimer;
+        window.pauseTimer = pauseTimer;
+        window.resetTimer = resetTimer;
+        window.setTimer = setTimer;
+        window.startBreathing = startBreathing;
+        window.stopBreathing = stopBreathing;
+        window.takeBreak = takeBreak;
+        window.toggleHabit = toggleHabit;
+        window.openWellnessAssistant = openWellnessAssistant;
+        window.wellnessHelp = wellnessHelp;
+        window.closeModal = closeModal;
+    </script>
+</body>
+</html>

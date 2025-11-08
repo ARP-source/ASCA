@@ -1,0 +1,37 @@
+{
+  "assignments": [
+    {
+      "id": "hw1",
+      "title": "History Essay",
+      "description": "Write a 5-page essay analyzing the causes and effects of World War II",
+      "due_date": "2025-11-15",
+      "course": "History 101"
+    },
+    {
+      "id": "hw2",
+      "title": "Calculus Problem Set",
+      "description": "Complete problems 1-20 from Chapter 5 on derivatives and integrals",
+      "due_date": "2025-11-12",
+      "course": "Math 201"
+    },
+    {
+      "id": "hw3",
+      "title": "Web Development Project",
+      "description": "Build a full-stack web application using React, Node.js, and MongoDB",
+      "due_date": "2025-11-20",
+      "course": "Computer Science 301"
+    }
+  ],
+  "preferences": {
+    "daily_study_hours": 6,
+    "preferred_start_time": "09:00",
+    "break_frequency": 60,
+    "break_duration": 15
+  },
+  "wellness_input": {
+    "mood": "stressed",
+    "stress_level": 7,
+    "sleep_hours": 6,
+    "energy_level": 5
+  }
+}
